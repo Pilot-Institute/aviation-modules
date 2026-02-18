@@ -1,0 +1,1182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="/images/favicon.png" type="image/png" />
+  <title>FAA Exam ACS Code Lookup — Pilot Institute</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f5f6f8;
+      --surface:#ffffff;
+      --text:#1a1f36;
+      --muted:#6b7280;
+      --accent:#ff2d7b;
+      --accent-hover:#e6196a;
+      --navy:#0b1220;
+      --navy-light:#1e293b;
+      --blue:#38bdf8;
+      --good:#16a34a;
+      --bad:#dc2626;
+      --border:rgba(0,0,0,.08);
+      --border-strong:rgba(0,0,0,.12);
+      --shadow:0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+      --shadow-lg:0 4px 24px rgba(0,0,0,.08);
+      --radius:16px;
+      --radius-sm:10px;
+      --font:'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    @media(prefers-color-scheme:dark){
+      :root{
+        --bg:#0b1220;
+        --surface:#131c2e;
+        --text:#e7eefc;
+        --muted:#94a3b8;
+        --border:rgba(255,255,255,.08);
+        --border-strong:rgba(255,255,255,.12);
+        --shadow:0 1px 3px rgba(0,0,0,.2), 0 4px 12px rgba(0,0,0,.15);
+        --shadow-lg:0 4px 24px rgba(0,0,0,.3);
+      }
+    }
+    *{box-sizing:border-box; margin:0;}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--font);
+      padding:0;
+      line-height:1.5;
+      -webkit-font-smoothing:antialiased;
+    }
+    .topbar{
+      background:var(--navy);
+      padding:14px 24px;
+      display:flex; align-items:center;
+    }
+    .topbar img{ height:32px; width:auto; }
+    .wrap{
+      max-width:960px;
+      margin:0 auto;
+      padding:24px 16px 40px;
+    }
+    .page-title{
+      font-size:28px; font-weight:800; letter-spacing:-.4px; margin-bottom:4px;
+    }
+    .page-subtitle{
+      color:var(--muted); font-size:14px; margin-bottom:24px;
+    }
+    .card{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card + .card{ margin-top:16px; }
+    .card-h{
+      padding:14px 18px;
+      border-bottom:1px solid var(--border);
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px; flex-wrap:wrap;
+    }
+    .card-h .h{ font-weight:800; font-size:15px; letter-spacing:-.1px; }
+    .card-h .h small{ display:block; font-weight:500; color:var(--muted); font-size:12px; margin-top:2px; }
+    .card-b{ padding:16px 18px; }
+    .tag{
+      display:inline-flex; align-items:center; gap:5px;
+      padding:4px 10px; border-radius:999px;
+      border:1px solid var(--border-strong); background:var(--bg);
+      color:var(--text); font-size:11px; font-weight:700; white-space:nowrap;
+    }
+    .upload-section{
+      background:var(--bg);
+      border:1px dashed var(--border-strong);
+      border-radius:var(--radius-sm);
+      padding:14px 16px;
+      margin-bottom:14px;
+    }
+    .upload-section h4{
+      font-size:13px; font-weight:700; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.3px; margin-bottom:10px;
+    }
+    .upload-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .upload-tip{ color:var(--muted); font-size:12px; line-height:1.45; margin-top:10px; }
+    #ocrFail{ color:var(--bad); font-size:12px; line-height:1.45; margin-top:8px; }
+    label.field-label{
+      display:block; font-size:12px; color:var(--muted); font-weight:700;
+      margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;
+    }
+    textarea{
+      width:100%; min-height:140px; resize:vertical;
+      padding:12px 14px; border-radius:var(--radius-sm);
+      border:1px solid var(--border-strong); outline:none;
+      background:var(--bg); color:var(--text);
+      font-family:var(--mono); font-size:12.5px; line-height:1.5;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,45,123,.12); }
+    input[type="file"]{ color:var(--muted); font-size:12px; font-weight:600; font-family:var(--font); }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    button{
+      border:1px solid var(--border-strong); border-radius:999px;
+      padding:9px 16px; background:var(--surface); color:var(--text);
+      outline:none; font-size:13px; cursor:pointer;
+      font-weight:700; font-family:var(--font); transition:all .15s;
+    }
+    button:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
+    button.primary{
+      background:var(--accent); color:#fff; border:none;
+      padding:10px 20px; font-weight:800; font-size:14px;
+    }
+    button.primary:hover:not(:disabled){ background:var(--accent-hover); }
+    button:disabled{ opacity:.45; cursor:not-allowed; }
+    .group{
+      border:1px solid var(--border);
+      border-radius:var(--radius-sm);
+      padding:12px 14px; background:var(--bg); margin-top:12px;
+    }
+    .group h4{
+      margin-bottom:8px; font-size:12px; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.3px; font-weight:700;
+    }
+    .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+    .chip{
+      display:inline-flex; gap:5px; align-items:center;
+      padding:5px 10px; border-radius:999px;
+      border:1px solid var(--border-strong); background:var(--surface);
+      font-size:12px; font-weight:700;
+    }
+    .chip .n{ font-family:var(--mono); color:var(--accent); font-weight:800; }
+    .toast{ margin-top:8px; font-size:12px; color:var(--muted); min-height:16px; }
+    .small{ color:var(--muted); font-size:12px; line-height:1.4; }
+    table{
+      width:100%; border-collapse:separate; border-spacing:0;
+      border:1px solid var(--border); border-radius:var(--radius-sm);
+      overflow:hidden; background:var(--surface);
+      font-size:12.5px; margin-top:12px;
+    }
+    thead th{
+      text-align:left; padding:10px 12px;
+      color:var(--muted); font-size:11px;
+      letter-spacing:.3px; text-transform:uppercase; font-weight:700;
+      border-bottom:1px solid var(--border); background:var(--bg);
+    }
+    tbody td{
+      padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:top;
+    }
+    tbody tr:last-child td{ border-bottom:none; }
+    tbody tr:hover{ background:rgba(255,45,123,.03); }
+    .code{ font-family:var(--mono); font-weight:800; font-size:12.3px; white-space:nowrap; }
+    .warnbox{
+      border:1px solid rgba(220,38,38,.25); background:rgba(220,38,38,.04);
+      border-radius:var(--radius-sm); padding:10px 14px; margin-top:10px;
+    }
+    .warnbox strong{ color:var(--bad); }
+    .warnlist{ margin:6px 0 0; padding-left:18px; color:var(--bad); font-family:var(--mono); font-size:12px; }
+    .ocrwarn{
+      border:1px solid rgba(234,179,8,.4); background:rgba(234,179,8,.06);
+      border-radius:var(--radius-sm); padding:10px 14px; margin-top:8px;
+      color:#92400e; font-size:12.5px; line-height:1.4;
+    }
+    @media(prefers-color-scheme:dark){
+      .ocrwarn{ color:#fef3c7; }
+      .warnbox strong{ color:#fca5a5; }
+      .warnlist{ color:#fca5a5; }
+    }
+    .ok{ color:var(--good); }
+    .bad{ color:var(--bad); }
+    .results-actions{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+    }
+    .footer{
+      max-width:960px; margin:16px auto 0;
+      color:var(--muted); font-size:11px; text-align:center;
+    }
+    .footer code{ font-family:var(--mono); }
+    .info-btn{
+      width:22px; height:22px; border-radius:50%; padding:0;
+      font-size:12px; font-weight:800; font-style:italic; font-family:Georgia,serif;
+      background:var(--bg); color:var(--muted); border:1px solid var(--border-strong);
+      cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+      transition:all .15s; flex-shrink:0;
+    }
+    .info-btn:hover{ color:var(--accent); border-color:var(--accent); }
+    .info-popup{
+      display:none; position:absolute; top:calc(100% + 8px); right:0;
+      background:var(--surface); border:1px solid var(--border-strong);
+      border-radius:var(--radius-sm); box-shadow:var(--shadow-lg);
+      padding:14px 16px; min-width:220px; z-index:100;
+    }
+    .info-popup.show{ display:block; }
+    .info-popup-title{
+      font-size:12px; font-weight:800; text-transform:uppercase;
+      letter-spacing:.3px; color:var(--muted); margin-bottom:10px;
+    }
+    .info-popup-row{
+      font-size:13px; padding:4px 0; color:var(--text);
+    }
+    .info-popup-code{
+      display:inline-block; width:28px; font-family:var(--mono);
+      font-weight:800; color:var(--accent);
+    }
+    .card-h{ position:relative; }
+    .sr-only{
+      position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+      overflow:hidden; clip:rect(0,0,0,0); border:0;
+    }
+    @media print{
+      body{ background:white !important; color:#000 !important; padding:0 !important; }
+      .topbar{ background:#1a1f36 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .wrap{ max-width:none !important; padding:18px !important; }
+      .card{ box-shadow:none !important; border:1px solid #ddd !important; }
+      textarea, .row, .upload-section, .toast, .results-actions{ display:none !important; }
+      .tag{ border:1px solid #ddd !important; }
+      table{ border:1px solid #ddd !important; }
+      .footer{ display:none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <img src="data:image/png;base64,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YbLSR0duoIGwU8LOxjGjYde0nvJPUkknqVVr1QHVanoMeZpfZqsOuFc5k138G4fsMA8ZkR26hzzyu2+xHkcpD4oNfrRpXaJLRaXw3DLqmI+t6YEOZSA9ks3k8ob2u8w6rOa+XW43y71d3u9ZNW19XK6WonmdzPkeT1JKD4kREBERBr/gn1EWH4tp/mmr2V42CfURYfi2n+aavZQZdcWnwjMz+7m/NMUWKU+LT4RmZ/dzfmmKLEBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQFImiOsOX6T3p1XYKls9vncDW22o3MFQB038rXjuc3r0G+46GO0QamaJa24VqtQD2Gq/Wd3Y3eotVU4CdnlLe6Rv8AOb98BSPV09PV00lLVwRVEErSySKVgcx7T2gg9CPMsc6GrqqCthraGpmpaqB4khmhkLJI3g7hzXDqCD3hWn0S4wr5ZvW9n1IpH3qgaAwXOnAFXGPK9pIbKPP4ru/xigkzWTg/xPI3z3TA6sYzcnkvNG8F9DI49wA8aLr9ju0dgaFTzUrSjPtPLoyhybHaqBssng6ephb4WnqHHsDJG7gk/YnZ3lAWnuA53iOeWkXPEr9R3WnAHhBE/aSInufGdnMPmcAukIB7Rugzp0d4UtQczlhrskididnds5z6yPeqkHkZD0I9L+Xbt2PYrqaRaN4FpfSAY1aGm4OZyTXKqPhKqXy+Nts0H7FgaPMpCJAG5OwCg3WHif05wLw1DQVX6p70zdvrS3yAxRu8kk3VrfIQ3mcO8BBNtbVU1FSS1lZUQ01NCwvlmleGMjaBuXOcegA8pVROIfi5pqVlRjmlUjamoI5Jb49n7HH5RAxw8Y/z3DbyA9Cq5aya3Z7qlUOjvtz9bWpry6G10e8dOzycw7ZCPK4nbrtso0QfvcKyruNdPX19VNV1dQ8yTTzPL3yOJ3LnOPUk+Ur8ERAREQEREF3cd4zsOtmP262yYhfnvpKWKBzmyRbOLGBpI8bzL7/buYX/ACNyD+0h/wASomiDsNaMtpc61Rv2W0NLNSU9yqBLHDMQXsAY1ux26dy49EQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREHo47fLzjl2iu1hulZbK+E/sdRSzOjePNuO4947CrMaZcYub2621FDlVlockkgpnPhqhL60lJaP8pytc133mtPnKIgi/V3iD1I1JEtHcbqLXaH7j2Ntu8UTm+SQ7l0nocdvIAomREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERB//2Q==" alt="Pilot Institute" />
+  </div>
+
+  <div class="wrap">
+    <h1 class="page-title">FAA Exam ACS Code Lookup</h1>
+    <p class="page-subtitle">Type, Paste, or upload your PDF Report</p>
+
+    <!-- Input Card -->
+    <div class="card">
+      <div class="card-h">
+        <div class="h">Enter ACS Codes</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="btnExamInfo" class="info-btn" title="Supported exams" onclick="document.getElementById('examInfoPopup').classList.toggle('show')">i</button>
+          <div class="tag" id="dataStatus">Loading ACS data&hellip;</div>
+          <div class="info-popup" id="examInfoPopup">
+            <div class="info-popup-title">Supported Exams</div>
+            <div class="info-popup-row"><span class="info-popup-code">PA</span> Private Airplane</div>
+            <div class="info-popup-row"><span class="info-popup-code">UA</span> Unmanned Aircraft</div>
+            <div class="info-popup-row"><span class="info-popup-code">IR</span> Instrument Rating</div>
+            <div class="info-popup-row"><span class="info-popup-code">CA</span> Commercial Airplane</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-b">
+        <div class="upload-section">
+          <h4>Upload report (PDF or image)</h4>
+          <div class="upload-row">
+            <input id="fileInput" type="file" accept="application/pdf,image/*" />
+            <button id="btnExtractFile">Extract codes from file</button>
+            <span class="tag" id="ocrStatus">Idle</span>
+          </div>
+          <div class="upload-tip">
+            <strong>Tips:</strong> Upload the PDF document downloaded directly from the PSI website. If you are taking a picture of your report, do it in a well lit area and make sure the image is not blurry.
+          </div>
+          <div id="ocrFail" style="display:none;">
+            <span id="ocrFailMsg">Couldn&rsquo;t find readable ACS codes. If you uploaded a photo, try uploading the original PDF from the PSI website instead.</span>
+          </div>
+        </div>
+        <span class="sr-only" id="libStatus">libs: ?</span>
+
+        <label class="field-label" for="codes">Your Codes (Paste or Type ACS Codes here)</label>
+        <textarea id="codes" placeholder="Paste here…
+
+Examples:
+PA.I.A.K1, PA.I.B.K2
+IR.I.A.K1
+IR-VI-C-K3 (hyphens also work)
+"></textarea>
+        <div class="row">
+          <button id="btnClear">Clear</button>
+          <button class="primary" id="btnSend" disabled>I verified my codes, please process</button>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+
+    <!-- Results Card (hidden until Process is clicked) -->
+    <div class="card" id="resultsCard" style="display:none;">
+      <div class="card-h">
+        <div class="h">Results <small>Here are the topics you missed on the exam. Be sure to study these topics.</small></div>
+        <div class="tag" id="matchStatus">0 matches</div>
+      </div>
+      <div class="card-b">
+        <span class="sr-only" id="statFound">0</span>
+        <span class="sr-only" id="statMatched">0</span>
+        <span class="sr-only" id="statUnknown">0</span>
+        <span class="sr-only" id="resultsGateMsg"></span>
+
+        <div class="group" style="margin-top:0;">
+          <h4>Summary by Area of Operations</h4>
+          <div class="chips" id="areaChips"></div>
+          <div class="small" id="areaEmpty">No summary yet.</div>
+        </div>
+
+        <div id="unknownWrap"></div>
+
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th style="width:130px">Code</th>
+              <th style="width:160px">Area</th>
+              <th style="width:160px">Task</th>
+              <th style="width:140px">Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody">
+            <tr><td colspan="5" class="small" style="padding:14px;">No results yet.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="results-actions">
+          <button id="btnCopy" disabled>Copy Results</button>
+          <button id="btnPDF" disabled>Create PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Version: <code>v2.1.3-2026-02-15</code> &middot; Pilot Institute</div>
+
+  <div id="debugPanel" style="display:none;">
+    <textarea id="dbgText" style="width:100%;min-height:180px;"></textarea>
+  </div>
+
+<script>
+
+
+/**********************
+ * CONFIG
+ **********************/
+const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzgxC5m5fLlILNGs4gl_m-bG1gZtaYcw8msb-ZCYQIYLfeBuEmKeZ3Htl8D-Qt03Gk0/exec";
+const VERSION = "v2.1.3-2026-02-15";
+window.__datasetReady = null;
+window.__lastPdfText = "";
+window.__lastOcrText = "";
+window.__lastExtractedCandidates = [];
+
+/**********************
+ * Report field extraction
+ **********************/
+function extractReportField(text, pattern){
+  if(!text)return "";
+  const m=text.match(pattern);
+  return m?m[1].trim():"";
+}
+function extractFTN(text){
+  if(!text)return "";
+  const m=text.match(/(?:FTN|TRACKING\s*NUMBER)[^A-C]*([AC]\d{7})/i);
+  if(m)return m[1].toUpperCase();
+  const m2=text.match(/([AC]\d{7})/);
+  return m2?m2[1].toUpperCase():"";
+}
+function extractExamId(text){
+  if(!text)return "";
+  const m=text.match(/EXAM\s*ID[:\s]*([89]\d{10,20})/i);
+  if(m)return m[1];
+  const m2=text.match(/\b(90\d{11,20})\b/);
+  return m2?m2[1]:"";
+}
+function extractExamDate(text){
+  return extractReportField(text, /EXAM\s*DATE:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+}
+function extractExamCode(text){
+  // The exam code is in parentheses after the exam name, e.g., (UAG), (PAR), (IRA)
+  return extractReportField(text, /EXAM:\s*[^()]+\(([A-Z]{2,5})\)/i);
+}
+function extractScore(text){
+  return extractReportField(text, /SCORE:\s*(\d{1,3}%)/i);
+}
+function extractTake(text){
+  return extractReportField(text, /TAKE:\s*(\d+)/i);
+}
+function extractAllReportFields(text){
+  return {
+    ftn: extractFTN(text),
+    examId: extractExamId(text),
+    examDate: extractExamDate(text),
+    examCode: extractExamCode(text),
+    score: extractScore(text),
+    take: extractTake(text)
+  };
+}
+window.__lastFTN = "";
+window.__lastExamId = "";
+window.__lastReportFields = {};
+
+
+
+async function getAnonId(){
+  try{
+    const key="acs_anon_seed_v1"; let seed=localStorage.getItem(key);
+    if(!seed){seed=(crypto.randomUUID?crypto.randomUUID():(Date.now()+"-"+Math.random()));localStorage.setItem(key,seed);}
+    const enc=new TextEncoder().encode(seed);const buf=await crypto.subtle.digest("SHA-256",enc);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  }catch{return "anon_"+Math.random().toString(16).slice(2);}
+}
+
+/**********************
+ * Minimal CSV parser
+ **********************/
+function parseCSV(text){
+  const rows=[];let i=0,field="",row=[],inQ=false;
+  while(i<text.length){const c=text[i];if(inQ){if(c==='"'){if(text[i+1]==='"'){field+='"';i+=2;continue;}inQ=false;i++;continue;}field+=c;i++;continue;}if(c==='"'){inQ=true;i++;continue;}if(c===','){row.push(field);field="";i++;continue;}if(c==='\r'){i++;continue;}if(c==='\n'){row.push(field);rows.push(row);field="";row=[];i++;continue;}field+=c;i++;}
+  row.push(field);rows.push(row);if(!rows.length)return[];
+  const hdr=rows[0].map(h=>h.trim());const objs=[];
+  for(let r=1;r<rows.length;r++){const ln=rows[r];if(ln.length===1&&(ln[0]??"").trim()==="")continue;const o={};for(let c=0;c<hdr.length;c++)o[hdr[c]]=(ln[c]??"").trim();objs.push(o);}
+  return objs;
+}
+
+const el=id=>document.getElementById(id);
+function updateLibStatus(){const ls=el("libStatus");if(ls)ls.textContent=`libs: pdfjs=${!!window.pdfjsLib} ocr=${!!window.Tesseract} prefixes=${(window.__prefixSet&&window.__prefixSet.size)||0}`;}
+function setToast(msg){el("toast").textContent=msg||"";}
+function escapeHTML(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
+
+async function __onFileChosen(){
+  const f=document.getElementById("fileInput")?.files?.[0];if(!f)return;
+  // Check for HEIC/HEIF format (not supported by browsers)
+  const fname=f.name.toLowerCase();
+  if(fname.endsWith(".heic")||fname.endsWith(".heif")||f.type==="image/heic"||f.type==="image/heif"){
+    setToast("HEIC/HEIF format is not supported. Please convert to JPG or PNG first (on iPhone: Settings → Camera → Formats → Most Compatible).");
+    setOcrStatus("Error: HEIC");return;
+  }
+  setToast(`File selected: ${f.name}. Extracting...`);
+  try{await extractCodesFromFile(f);}catch(e){console.error(e);setToast("Auto-extract failed. Check console.");}
+}
+function setDebugVisible(on){const p=el("debugPanel");if(p)p.style.display=on?"block":"none";}
+function setDebugText(txt){const t=el("dbgText");if(t)t.value=String(txt||"");}
+function appendDebugSection(title,body){setDebugText((el("dbgText")?.value||"")+`\n\n=== ${title} (${new Date().toISOString()}) ===\n`+(body||""));}
+window.__onFileChosen=__onFileChosen;
+
+/**********************
+ * Data loading
+ **********************/
+const ACS=new Map();
+async function loadDataset(){
+  const candidates=["./data/ACS_codes.csv","./data/ACS_code.csv","./ACS_code.csv","./ACS_codes.csv"];
+  let res=null,lastStatus=null;
+  for(const url of candidates){try{const r=await fetch(url,{cache:"no-store"});lastStatus=r.status;if(r.ok){res=r;break;}}catch(e){}}
+  if(!res)throw new Error(`Failed to load ACS codes CSV. Last status: ${lastStatus}`);
+  const text=await res.text();const rows=parseCSV(text);let count=0;
+  for(const r of rows){const code=(r["ACS Code"]||"").toUpperCase().trim();if(!code)continue;ACS.set(code,{code,area:r["Area of Operations"]||"",task:r["Task"]||"",type:r["Type"]||"",desc:r["Description"]||""});count++;}
+  window.__codeKeyByUpper=new Map();for(const k of ACS.keys()){const up=k.toUpperCase();if(!window.__codeKeyByUpper.has(up))window.__codeKeyByUpper.set(up,k);}
+  window.__codeIndex=new Set(window.__codeKeyByUpper.keys());
+  window.__prefixSet=new Set();for(const up of window.__codeIndex)window.__prefixSet.add(up.split(".")[0]);
+  window.__kStemMap=new Map();
+  for(const up of window.__codeIndex){const parts=up.split(".");if(parts.length>=4){const last=parts[parts.length-1];const m=last.match(/^([KRS]\d{1,3})([A-Z])$/);if(m){const stem=parts.slice(0,-1).concat([m[1]]).join(".");if(!window.__kStemMap.has(stem))window.__kStemMap.set(stem,[]);window.__kStemMap.get(stem).push(up);}}}
+  return count;
+}
+
+/**********************
+ * Code extraction v1.9.0
+ **********************/
+/* Hard constraints derived from ACS_codes.csv:
+ *   Prefixes: CA, IR, PA, PH, UA
+ *   Roman numerals: I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII (chars: I,V,X only)
+ *   Task letters: A-N
+ *   Element types: K, R, S  (numbers 1-28, suffixes a-l)
+ *   => C, D, J, L, M in roman position are ALWAYS OCR errors
+ *   => L,1,|,J -> I always; no ambiguity
+ */
+const VALID_PREFIXES=new Set(["CA","IR","PA","PH","UA"]);
+const VALID_ROMANS=new Set(["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"]);
+const VALID_TASKS=new Set("ABCDEFGHIJKLMN".split(""));
+
+function fixRomanOCR(seg){
+  // In the roman numeral segment, ONLY I,V,X are valid chars.
+  // Common OCR misreads: L->I, 1->I, |->I, J->I, l->I
+  let s=seg.toUpperCase();
+  s=s.replace(/[LlJ1\|]/g,"I");
+  // After fixing, validate it's a real roman numeral
+  return VALID_ROMANS.has(s)?s:null;
+}
+function normalizeCandidate(raw){
+  let s=String(raw||"").trim().toUpperCase();if(!s)return"";
+  s=s.replace(/[\u2010-\u2015\u2212\u00AD]/g,".");s=s.replace(/-/g,".");s=s.replace(/\s+/g,"");
+  s=s.replace(/[^A-Z0-9\.]/g,".");s=s.replace(/\.+/g,".");s=s.replace(/^\./,"").replace(/\.$/,"");return s;
+}
+
+function focusOnCodesSection(text){
+  const lower=text.toLowerCase();
+  const sp=["a single code may represent","a single code","learning statement code","subject matter code"];
+  let si=-1;for(const p of sp){const idx=lower.indexOf(p);if(idx!==-1){si=idx;break;}}
+  const ep=["expiration date","authorized instructor","do not send to faa"];
+  let ei=-1;for(const p of ep){const idx=lower.indexOf(p,si>-1?si:0);if(idx!==-1){if(ei===-1||idx<ei)ei=idx;}}
+  if(si!==-1&&ei!==-1&&ei>si)return text.slice(si,ei);
+  if(si!==-1)return text.slice(si);
+  return text;
+}
+
+function validateCode(up){
+  const dict=window.__codeIndex,kbu=window.__codeKeyByUpper,ksm=window.__kStemMap;
+  if(!dict)return null;
+  if(dict.has(up))return kbu.get(up)||up;
+  const parts=up.split(".");
+  if(parts.length<4)return null;
+  const last=parts[parts.length-1];
+
+  // Hard fix: roman numeral can ONLY use I,V,X. Replace all L/J/1/| with I.
+  const fixedRoman=parts[1].replace(/[LJ1\|]/g,"I");
+  if(fixedRoman!==parts[1]){
+    const candidate=[parts[0],fixedRoman,...parts.slice(2)].join(".");
+    if(dict.has(candidate))return kbu.get(candidate)||candidate;
+  }
+
+
+  // Try exact match first with all roman fixes, then fall back to stem matching
+  const romansToTry=[...new Set([parts[1],fixedRoman])];
+  // Also try extending: L→I gives "I", but could be "II","III","IV" etc.
+  // Generate nearby romans by prepending/appending I
+  if(fixedRoman.length<=2){
+    for(const ext of ["I"+fixedRoman,fixedRoman+"I","II"+fixedRoman.slice(1)]){
+      if(/^[IVX]{1,4}$/.test(ext))romansToTry.push(ext);
+    }
+  }
+  // First pass: try exact matches only (prefer exact over stem)
+  for(const rom of romansToTry){
+    const candidate=[parts[0],rom,...parts.slice(2)].join(".");
+    if(dict.has(candidate))return kbu.get(candidate)||candidate;
+  }
+  // Second pass: try stem/suffix variations
+  for(const rom of romansToTry){
+    const base=[parts[0],rom,...parts.slice(2)].join(".");
+    const bParts=base.split(".");
+    const bLast=bParts[bParts.length-1];
+
+    // Stem matching: if last part is like K1D, try K1 (without suffix)
+    const stemMatch=bLast.match(/^([KRS]\d{1,3})([A-Z]+)$/);
+    if(stemMatch){
+      const stem=bParts.slice(0,-1).concat([stemMatch[1]]).join(".");
+      if(dict.has(stem))return kbu.get(stem)||stem;
+    }
+    // Pure number (K1, K25) - try appending suffix letters a-l
+    if(/^[KRS]\d+$/.test(bLast)){
+      const stem=bParts.join(".");
+      if(ksm&&ksm.has(stem)){const opts=ksm.get(stem);if(opts.length===1&&dict.has(opts[0]))return kbu.get(opts[0])||opts[0];}
+      for(const s of "ABCDEFGHIJKL"){const t=base+s;if(dict.has(t))return kbu.get(t)||t;}
+    }
+    // Trim trailing letter and try
+    if(bLast.length>2){const trimmed=bParts.slice(0,-1).concat([bLast.slice(0,-1)]).join(".");if(dict.has(trimmed))return kbu.get(trimmed)||trimmed;}
+  }
+
+  return null;
+}
+
+/* Decompose OCR-glued tokens like "UAILA.K1" or "UAJ.B.K1"
+ * Uses hard constraints: roman chars are ONLY I,V,X.
+ * Any L,J,1,| in roman position is unconditionally replaced with I. */
+function decomposeGluedTokens(text,prefixSet,codeIndex){
+  const prefixes=Array.from(prefixSet).sort((a,b)=>b.length-a.length);
+  const results=[];
+  // Sorted longest-first so VIII matches before VII, VI, V etc.
+  const romans=["VIII","XII","VII","III","XI","VI","IV","IX","II","X","V","I"];
+  const tokens=text.split(/[\s,;]+/).filter(Boolean);
+
+  // Also try joining adjacent tokens that might be split codes
+  const extendedTokens=[...tokens];
+  for(let i=0;i<tokens.length-1;i++){
+    const joined=tokens[i]+tokens[i+1];
+    if(joined.length>=6&&joined.length<=20)extendedTokens.push(joined);
+    if(i<tokens.length-2){const j3=tokens[i]+tokens[i+1]+tokens[i+2];if(j3.length>=6&&j3.length<=20)extendedTokens.push(j3);}
+  }
+
+  for(const tok of extendedTokens){
+    const upper=tok.toUpperCase().replace(/[^A-Z0-9\.]/g,"");
+    if(!upper||upper.length<5)continue;
+    for(const prefix of prefixes){
+      if(!upper.startsWith(prefix))continue;
+      let rest=upper.slice(prefix.length);if(rest.startsWith("."))rest=rest.slice(1);
+
+      // L/J are ALWAYS I in ACS codes. Roman only uses I,V,X. Task L only exists as CA.IV.L.
+      // Replace L,J,| with I everywhere. 1→I only before K/R/S (digits after K/R/S are real).
+      const fixLJ=rest.replace(/[LJ\|]/g,"I");
+      const krsIdx=fixLJ.search(/[KRS]\d/);
+      const fixed=krsIdx>0?fixLJ.slice(0,krsIdx).replace(/1/g,"I")+fixLJ.slice(krsIdx):fixLJ.replace(/1(?=[A-Z])/g,"I");
+      const fixedT=fixed.replace(/([KRS])T/g,"$11");
+      const variants=new Set([rest,fixLJ,fixed,fixedT]);
+      // L→I can create phantom I's. Only add reduced variants when original had L's
+      // (indicating OCR confusion), not when text already had clean II's.
+      const hadL=/[LJ]/.test(rest);
+      if(hadL&&fixed.startsWith("II")){
+        const reduced=fixed.slice(1); // Remove one leading I
+        variants.add(reduced);
+        if(fixed.startsWith("III"))variants.add(fixed.slice(2)); // Remove two
+      }
+
+      const found=[];
+      for(const variant of variants){
+        for(const rom of romans){
+          if(!variant.startsWith(rom))continue;
+          let ar=variant.slice(rom.length).replace(/^\./,"");
+          ar=ar.replace(/([KRS])T(?=[^A-Z]|$)/g,"$11").replace(/([KRS])T([A-La-l])$/g,"$11$2");
+          const m1=ar.match(/^([A-N])\.?([KRS]\d{1,3}[A-La-l]?)$/);
+          if(m1){found.push({code:`${prefix}.${rom}.${m1[1]}.${m1[2].toUpperCase()}`,romLen:rom.length,via:"m1"});}
+          if(!m1){const mG=ar.match(/^([A-N])[^KRS\d]([KRS]\d{1,3}[A-La-l]?)$/);
+            if(mG){found.push({code:`${prefix}.${rom}.${mG[1]}.${mG[2].toUpperCase()}`,romLen:rom.length,via:"mG"});}}
+          if(ar.length>=2){const sk=ar.slice(1);const m2=sk.match(/^\.?([A-N])\.?([KRS]\d{1,3}[A-La-l]?)$/);
+            if(m2){found.push({code:`${prefix}.${rom}.${m2[1]}.${m2[2].toUpperCase()}`,romLen:rom.length,via:"m2"});}}
+        }
+      }
+      if(found.length){
+        if(codeIndex){
+          const inDataset=found.filter(f=>codeIndex.has(f.code));
+          if(inDataset.length){
+            // When L→I substitution created ambiguity, determine if roman II is natural or inflated.
+            // Original rest with IL/LI/LL patterns → L represents I+dot merger → prefer shorter roman.
+            // Original rest with actual II → roman II is genuine → prefer longer roman.
+            const hasNaturalII=rest.includes("II"); // original had two consecutive I's
+            const preferShorter=hadL&&!hasNaturalII;
+            inDataset.sort((a,b)=>{
+              const viaOrder={"m1":0,"mG":1,"m2":2};
+              const vd=((viaOrder[a.via]??9)-(viaOrder[b.via]??9));
+              if(vd!==0)return vd;
+              return preferShorter?(a.romLen-b.romLen):(b.romLen-a.romLen);
+            });
+            results.push(inDataset[0].code);break;
+          }
+        }
+        found.sort((a,b)=>{
+          const viaOrder={"m1":0,"mG":1,"m2":2};
+          const vd=((viaOrder[a.via]??9)-(viaOrder[b.via]??9));
+          if(vd!==0)return vd;
+          const hasNaturalII=rest.includes("II");
+          const preferShorter=hadL&&!hasNaturalII;
+          return preferShorter?(a.romLen-b.romLen):(b.romLen-a.romLen);
+        });
+        results.push(found[0].code);
+      }
+      break;
+    }
+  }
+  return results;
+}
+
+function extractCodes(text,isPsiPdfText){
+  let t=String(text||"");if(!t.trim())return[];
+  t=t.replace(/https?:\/\/\S+/gi," ");t=t.replace(/\bwww\.\S+/gi," ");
+  t=t.replace(/\bfaa\.gov\S*/gi," ");t=t.replace(/\btraining[_\-]testing\S*/gi," ");
+  const textToSearch=focusOnCodesSection(t);
+  let norm=textToSearch;
+  // PSI PDF native text fix (NOT OCR): In PSI-generated PDFs, the font glyph mapping
+  // encodes "." as "L" and "I" as "J" in the selectable text layer.
+  // This ONLY applies to native PDF text extraction, not to OCR output.
+  // For OCR output, L is always a misread I (never a dot).
+  if(isPsiPdfText){
+    // Fix J→I in prefix-adjacent position (UAJ.B.K1 -> UAI.B.K1)
+    norm=norm.replace(/\b(UA|CA|PA|PH|IR)J\./g,"$1I.");
+    // Fix UAILA.K1 pattern: PREFIX + roman + L + task + . + element
+    // Only when the L is immediately before a single task letter followed by a dot
+    norm=norm.replace(/\b(UA|CA|PA|PH|IR)([IVX]+)L([A-N])\./g,"$1.$2.$3.");
+    norm=norm.replace(/\.{2,}/g,".");
+  }
+  // OCR common substitutions in K-codes: T->1, I->1, O->0, d->4
+  norm=norm.replace(/([KRS])T\b/g,"$11");  // KT -> K1, RT -> R1 at word end
+  norm=norm.replace(/([KRS])T(\s)/g,"$11$2");  // KT followed by space
+  norm=norm.replace(/([KRS])T([A-Za-z])\b/g,"$11$2");  // KT followed by letter suffix: KTb -> K1b
+  // KI -> K1 (Tesseract reads digit 1 as letter I after K/R/S)
+  norm=norm.replace(/([KRS])I([A-Za-z])\b/g,"$11$2");  // KIc -> K1c
+  norm=norm.replace(/([KRS])I\b/g,"$11");  // KI -> K1 at word end
+  norm=norm.replace(/([KRS])I(\s)/g,"$11$2");  // KI followed by space
+  // Kd -> K4 (Tesseract reads 4 as lowercase d)
+  norm=norm.replace(/([KRS])d([A-Za-z])\b/g,"$14$2");  // Kdg -> K4g
+  norm=norm.replace(/([KRS])d(\d)/g,"$14$2");  // Kd1 -> K41
+  norm=norm.replace(/([KRS])d\b/g,"$14");  // Kd -> K4 at word end
+  norm=norm.replace(/([KRS])d(\s)/g,"$14$2");  // Kd followed by space
+  // KK -> K (doubled K from OCR)
+  norm=norm.replace(/KK(\d)/g,"K$1");  // KK3 -> K3 anywhere
+  // Join split K/R/S suffixes: "K4 g" -> "K4g", "K 1d" -> "K1d"
+  norm=norm.replace(/\b(K\d{1,3})\s+([A-Za-z])\b/g,"$1$2");
+  norm=norm.replace(/\b(K)\s+(\d{1,3}[A-Za-z]?)\b/gi,"$1$2");
+  norm=norm.replace(/\b([RS]\d{1,3})\s+([A-Za-z])\b/g,"$1$2");
+  norm=norm.replace(/\b([RS])\s+(\d{1,3}[A-Za-z]?)\b/gi,"$1$2");
+  // Join split code + suffix across line breaks: "K1\nd" -> "K1d"
+  norm=norm.replace(/\b([KRS]\d{1,3})\s*\n\s*([A-Za-z])\b/g,"$1$2");
+  // Rejoin tokens split by OCR spaces that look like broken codes
+  // e.g., "UAL AKT" -> "UALAK1" (L=I, T=1), "PA VIL" -> "PAVIL"
+  norm=norm.replace(/\b([A-Z]{2,3}[A-Z0-9\.]{0,6})\s+([A-Z]{1,3}[KRS]\d?[A-Za-z0-9]{0,3})\b/g,"$1$2");
+  // Break glued codes: ...K4bUA.V.D.K2
+  norm=norm.replace(/([A-Za-z0-9])([A-Z]{2,3}\.[IVX]{1,4}\.)/g,"$1 $2");
+  // Also break on prefix pattern after a letter+digit: "K1dUA" -> "K1d UA"
+  norm=norm.replace(/([A-Za-z0-9])(?=UA\.|CA\.|PA\.|IR\.|IA\.|CA\.)/g,"$1 ");
+  // Fix double-dot: UA..B.K21c -> UA.I.B.K21c (missing roman numeral, assume I)
+  norm=norm.replace(/\b(UA|CA|PA|PH|IR)\.\.([A-N])\./g,"$1.I.$2.");
+  // Space-separated -> dot: "UA II B K5"
+  norm=norm.replace(/\b([A-Z]{2,3})[\s]+([IVX]{1,4})[\s]+([A-Z][A-Za-z0-9]*)[\s]+([KRS]\d{1,3}[A-Za-z]?)\b/g,"$1.$2.$3.$4");
+
+  const allCandidates=new Set();
+  const dict=window.__codeIndex||null;
+  const kbu=window.__codeKeyByUpper||null;
+  const pset=window.__prefixSet||null;
+
+  // Strategy 1: Dot-separated codes (4+ parts)
+  for(const m of (norm.match(/\b[A-Z]{2,3}\.[A-Z0-9]{1,6}(?:\.[A-Z0-9]{1,6}){2,8}\b/gi)||[])){const c=normalizeCandidate(m);if(c)allCandidates.add(c);}
+
+  // Strategy 2: Loose pattern (mixed separators, split suffixes)
+  const looseRe=/\b([A-Z]{2,3})[\s\.\-\u2022\u2013\u2014]+([IVX]{1,4})[\s\.\-\u2022\u2013\u2014]+([A-Z][A-Za-z0-9]{0,5})[\s\.\-\u2022\u2013\u2014]+([KRS]\d{1,3})(?:[\s\.\-\u2022\u2013\u2014]{0,3}([A-Za-z]))?\b/g;
+  let lm;while((lm=looseRe.exec(norm))!==null)allCandidates.add(`${lm[1].toUpperCase()}.${lm[2].toUpperCase()}.${lm[3].toUpperCase()}.${lm[4].toUpperCase()}${(lm[5]||"").toUpperCase()}`);
+
+  // Strategy 3: Hyphen-separated
+  const hypRe=/\b([A-Z]{2,3})-([IVX]{1,4})-([A-Z][A-Za-z0-9]{0,5})-([KRS]\d{1,3}[A-Za-z]?)\b/gi;
+  let hm;while((hm=hypRe.exec(textToSearch))!==null)allCandidates.add(`${hm[1].toUpperCase()}.${hm[2].toUpperCase()}.${hm[3].toUpperCase()}.${hm[4].toUpperCase()}`);
+
+  // Strategy 4: OCR-glued tokens (UAILA.K1, UAJ.B.K1, etc.) - prioritized decomposition
+  if(pset&&pset.size>0){
+    for(const g of decomposeGluedTokens(norm,pset,dict))allCandidates.add(g);
+  }
+
+  // Strategy 5: OCR roman numeral fixes — L/J/1/| are NEVER valid roman chars, always I
+  const ocrRe=/\b([A-Z]{2,3})[\s\.\-]+([IVXLlJ1\|]{1,5})[\s\.\-]+([A-Za-z][A-Za-z0-9]{0,5})[\s\.\-]+([KRSkrs]\d{1,3}[A-Za-z]?)\b/g;
+  let om;while((om=ocrRe.exec(norm))!==null){let r2=om[2].toUpperCase().replace(/[LJ1\|]/g,"I");allCandidates.add(`${om[1].toUpperCase()}.${r2}.${om[3].toUpperCase()}.${om[4].toUpperCase()}`);}
+
+  // Strategy 6: Ultra-loose OCR recovery - catches codes where dots are missing
+  const ultraRe=/\b([A-Z]{2,3})\.?([IVXLlJ1\|]{1,5})\.?([A-Za-z])\.?([KRSkrs]\d{1,3}[A-Za-z]?)\b/g;
+  let um;while((um=ultraRe.exec(norm))!==null){
+    let r2=um[2].toUpperCase().replace(/[LJ1\|]/g,"I");
+    const code=`${um[1].toUpperCase()}.${r2}.${um[3].toUpperCase()}.${um[4].toUpperCase()}`;
+    allCandidates.add(code);
+  }
+
+  // Normalize all candidates
+  const normalized=[];
+  for(const raw of allCandidates){
+    let s=raw.toUpperCase();
+    // Fix split roman numerals from OCR
+    s=s.replace(/\.I\.I\.I\./g,".III.");s=s.replace(/\.V\.I\.I\.I\./g,".VIII.");
+    s=s.replace(/\.V\.I\.I\./g,".VII.");s=s.replace(/\.V\.I\./g,".VI.");
+    s=s.replace(/\.I\.V\./g,".IV.");s=s.replace(/\.I\.X\./g,".IX.");s=s.replace(/\.I\.I\./g,".II.");
+    // Repair missing dot after Roman numeral: UA.IIA.K1 -> UA.II.A.K1
+    s=s.replace(/\b([A-Z]{2,3})\.([IVX]{2,4})([A-Z][^.])/g,"$1.$2.$3");
+    // Also repair with L/J in roman: UA.LB.K4b -> UA.L.B.K4b (L will be fixed to I/II later)
+    s=s.replace(/\b([A-Z]{2,3})\.([IVXLJ]{1,5})([A-N])\.([KRS]\d)/g,"$1.$2.$3.$4");
+    // Repair missing dot: UA.II.BK1 -> UA.II.B.K1
+    s=s.replace(/\b([A-Z]{2,3}\.[IVX]{1,4}\.[A-Z])([KRS]\d)/g,"$1.$2");
+    normalized.push(s);
+  }
+
+  // Also generate OCR roman-fix variants: L/J/1/| -> I (these are NEVER valid roman chars)
+  const withRomanFixes=[...normalized];
+  for(const s of normalized){
+    const parts=s.split(".");
+    if(parts.length>=4){
+      const rom=parts[1];
+      const fixed=rom.replace(/[LJ1\|]/g,"I");
+      if(fixed!==rom){
+        const variant=[parts[0],fixed,...parts.slice(2)].join(".");
+        if(!allCandidates.has(variant))withRomanFixes.push(variant);
+      }
+
+    }
+  }
+
+  // Validate against dataset
+  let valid=[];
+  if(dict&&kbu&&pset){
+    for(const c of withRomanFixes){
+      const parts=c.split(".");if(parts.length<4)continue;
+      const p=parts[0];if(p.length<2)continue;if(!pset.has(p))continue;
+      const v=validateCode(c.toUpperCase());if(v)valid.push(v);
+    }
+    // Repair dropped leading letter (OCR drops first char: UA->A, CA->A)
+    let leadLetters=["U","C","P","I"];
+    const vpi=new Set();for(const c0 of valid){const p0=String(c0).split(".")[0]||"";if(p0.length>=2)vpi.add(p0[0]);}
+    if(vpi.size===1)leadLetters=[Array.from(vpi)[0]];
+    for(const c of withRomanFixes){const parts=c.split(".");if(parts.length<4||parts[0].length!==1)continue;
+      for(const L of leadLetters){const pp=(L+parts[0]).toUpperCase();if(!pset.has(pp))continue;
+        const v=validateCode([pp,...parts.slice(1)].join("."));if(v)valid.push(v);}}
+  }else{
+    valid=withRomanFixes.filter(s=>/^[A-Z]{2,3}\.[IVX]{1,4}\.[A-Z][A-Z0-9]*\.[KRS]\d{1,3}[A-Z]?$/i.test(s)&&!/(HTTP|WWW|FAA|GOV|TRAINING|TESTING)/.test(s));
+  }
+
+  // De-duplicate and filter competing prefix families
+  const tailsByPrefix=new Map();
+  for(const c of valid){const parts=String(c).split(".");const p=parts[0].toUpperCase();const tail=parts.slice(1).join(".");if(!tailsByPrefix.has(p))tailsByPrefix.set(p,new Set());tailsByPrefix.get(p).add(tail);}
+  let domP=null,maxC=0;for(const [p,t] of tailsByPrefix)if(t.size>maxC){maxC=t.size;domP=p;}
+  if(domP&&maxC>1){const domT=tailsByPrefix.get(domP);valid=valid.filter(c=>{const p=String(c).split(".")[0].toUpperCase();if(p===domP)return true;const t=String(c).split(".").slice(1).join(".");return!domT.has(t);});}
+
+  const seen=new Set();const out=[];
+  for(const c of valid){const up=c.toUpperCase();if(!seen.has(up)){seen.add(up);out.push(c);}}
+  // Note: I vs II ambiguity from L→I substitution is resolved by preferring shorter
+  // roman in decompose. This is correct in most cases. For documents with only section II
+  // codes, the user may need to manually correct.
+
+  // Remove stem-only codes when the full suffixed version exists
+  // e.g., if both UA.II.B.K4 and UA.II.B.K4B are present, remove UA.II.B.K4
+  {const outSet2=new Set(out.map(c=>c.toUpperCase()));
+  for(let i=out.length-1;i>=0;i--){
+    const up=out[i].toUpperCase();
+    const m=up.match(/^(.+\.[KRS]\d{1,3})$/);
+    if(m){let hasSuffixed=false;
+      for(const s of "ABCDEFGHIJKL"){if(outSet2.has(m[1]+s)){hasSuffixed=true;break;}}
+      if(hasSuffixed){out.splice(i,1);outSet2.delete(up);}
+    }
+  }}
+
+  // Sort by ACS code structure: prefix → roman numeral → task letter → element type → number → suffix
+  if(out.length>1){
+    const romanOrder={"I":1,"II":2,"III":3,"IV":4,"V":5,"VI":6,"VII":7,"VIII":8,"IX":9,"X":10,"XI":11,"XII":12};
+    out.sort((a,b)=>{
+      const pa=a.toUpperCase().split("."), pb=b.toUpperCase().split(".");
+      // 1. Prefix (UA, CA, PA, etc.)
+      if(pa[0]!==pb[0])return pa[0].localeCompare(pb[0]);
+      // 2. Roman numeral (I < II < III < IV < V ...)
+      const ra=romanOrder[pa[1]]||99, rb=romanOrder[pb[1]]||99;
+      if(ra!==rb)return ra-rb;
+      // 3. Task letter (A < B < C ...)
+      if((pa[2]||"")!==(pb[2]||""))return(pa[2]||"").localeCompare(pb[2]||"");
+      // 4. Element: type letter (K < R < S), then number, then suffix letter
+      const ea=pa[3]||"", eb=pb[3]||"";
+      const ma=ea.match(/^([KRS])(\d+)([A-Z]?)$/i), mb=eb.match(/^([KRS])(\d+)([A-Z]?)$/i);
+      if(ma&&mb){
+        // Type letter
+        if(ma[1]!==mb[1])return ma[1].localeCompare(mb[1]);
+        // Number
+        const na=parseInt(ma[2]),nb=parseInt(mb[2]);
+        if(na!==nb)return na-nb;
+        // Suffix letter
+        return(ma[3]||"").localeCompare(mb[3]||"");
+      }
+      return ea.localeCompare(eb);
+    });
+  }
+
+  return out;
+}
+
+/**********************
+ * File extraction (PDF/Image)
+ **********************/
+function loadScriptOnce(urlOrUrls,globalTest){
+  const urls=Array.isArray(urlOrUrls)?urlOrUrls:[urlOrUrls];
+  return new Promise(async(resolve,reject)=>{
+    if(globalTest&&globalTest())return resolve("already");let lastErr=null;
+    for(const url of urls){try{if(globalTest&&globalTest())return resolve("already");const s=document.createElement("script");s.src=url;s.async=true;await new Promise((res,rej)=>{s.onload=()=>res();s.onerror=e=>rej(e);document.head.appendChild(s);});if(!globalTest||globalTest())return resolve(url);}catch(err){lastErr=err;}}
+    reject(lastErr||new Error("Failed to load script candidates"));
+  });
+}
+async function ensurePdfJs(){
+  if(window.pdfjsLib)return{ok:true,src:"already"};
+  try{await loadScriptOnce(["./libs/pdf.min.js","/libs/pdf.min.js","libs/pdf.min.js","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.js","https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.min.js"],()=>!!window.pdfjsLib);if(!window.pdfjsLib)throw new Error("pdfjsLib missing");await setPdfWorkerSrc();return{ok:true};}
+  catch(e){console.warn("ensurePdfJs failed",e);return{ok:false,error:String(e)};}
+}
+async function ensureOcrLibs(){
+  const out={okPdf:false,okTes:false,ok:false};
+  const pdf=await ensurePdfJs();out.okPdf=!!(pdf&&pdf.ok&&window.pdfjsLib);
+  if(!window.Tesseract){try{await loadScriptOnce(["./libs/tesseract.min.js","/libs/tesseract.min.js","libs/tesseract.min.js","https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js","https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"],()=>!!window.Tesseract);}catch(e){console.warn("tesseract load failed",e);}}
+  out.okTes=!!window.Tesseract;out.ok=out.okPdf&&out.okTes;return out;
+}
+async function setPdfWorkerSrc(){
+  if(!window.pdfjsLib?.GlobalWorkerOptions)return;
+  const cands=["./libs/pdf.worker.min.js","/libs/pdf.worker.min.js","libs/pdf.worker.min.js","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.js","https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.worker.min.js"];
+  for(const url of cands){try{const r=await fetch(url,{method:"HEAD"});if(r&&r.ok){pdfjsLib.GlobalWorkerOptions.workerSrc=url;return;}}catch(e){}}
+  pdfjsLib.GlobalWorkerOptions.workerSrc=cands[0];
+}
+if(window.pdfjsLib?.GlobalWorkerOptions)pdfjsLib.GlobalWorkerOptions.workerSrc="./libs/pdf.worker.min.js";
+
+function setOcrStatus(msg){el("ocrStatus").textContent=msg;}
+function showOcrFail(show,msg){
+  const wrap=el("ocrFail");
+  if(msg){const m=el("ocrFailMsg");if(m)m.textContent=msg;}
+  // Use warning style (amber) for low-quality warnings, error style (red) for failures
+  if(msg&&msg.includes("⚠️")){wrap.className="small ocrwarn";}else{wrap.className="small";wrap.style.color="#fecaca";}
+  wrap.style.display=show?"block":"none";
+}
+
+function addExtractedCodesToTextarea(codes){
+  if(!codes.length)return;
+  const existing=extractCodes(el("codes").value);
+  // Merge preserving order: existing first, then new codes not already present
+  const seen=new Set(existing.map(c=>c.toUpperCase()));
+  const merged=[...existing];
+  for(const c of codes){if(!seen.has(c.toUpperCase())){seen.add(c.toUpperCase());merged.push(c);}}
+  el("codes").value=merged.join(" ");
+  setProcessVisible((el("codes").value||"").trim().length>0);
+  // Render directly with the merged codes to preserve order (don't re-extract from textarea)
+  renderAll(merged);updateLibStatus();
+}
+
+async function extractTextFromPdf(fileOrBuf,maxPages=2){
+  if(!window.pdfjsLib)throw new Error("pdf.js not loaded.");
+  await setPdfWorkerSrc();
+  let ab;if(fileOrBuf&&typeof fileOrBuf.arrayBuffer==="function")ab=await fileOrBuf.arrayBuffer();else ab=fileOrBuf;
+  if(!ab)throw new Error("No PDF data.");
+  const data=(ab instanceof ArrayBuffer)?new Uint8Array(ab):ab;
+  const pdf=await pdfjsLib.getDocument({data}).promise;
+  let combined="";
+  const n=Math.min(pdf.numPages||1,maxPages);
+  for(let p=1;p<=n;p++){
+    const page=await pdf.getPage(p);const tc=await page.getTextContent();
+    const items=(tc.items||[]).slice();
+    items.sort((a,b)=>{const ay=a.transform?a.transform[5]:0;const by=b.transform?b.transform[5]:0;if(Math.abs(ay-by)<5){return(a.transform?a.transform[4]:0)-(b.transform?b.transform[4]:0);}return by-ay;});
+    let lastY=null,lineText="";
+    for(const item of items){
+      const y=item.transform?item.transform[5]:0;const str=item.str||"";
+      if(lastY!==null&&Math.abs(y-lastY)>5){combined+=lineText.trim()+"\n";lineText="";}
+      if(lineText&&!lineText.endsWith(" ")&&!str.startsWith(" "))lineText+=" ";
+      lineText+=str;lastY=y;
+    }
+    if(lineText.trim())combined+=lineText.trim()+"\n";
+    combined+="\n";
+  }
+  return combined;
+}
+
+async function renderPdfPageToCanvas(fileOrBuf,pageNum=1,scale=2.5){
+  if(!window.pdfjsLib)throw new Error("pdf.js not loaded.");await setPdfWorkerSrc();
+  let ab;if(fileOrBuf&&typeof fileOrBuf.arrayBuffer==="function")ab=await fileOrBuf.arrayBuffer();else ab=fileOrBuf;
+  if(!ab)throw new Error("No PDF data.");
+  const data=(ab instanceof ArrayBuffer)?new Uint8Array(ab):ab;
+  const pdf=await pdfjsLib.getDocument({data}).promise;
+  const page=await pdf.getPage(pageNum);const vp=page.getViewport({scale});
+  const canvas=document.createElement("canvas");const ctx=canvas.getContext("2d");
+  canvas.width=Math.ceil(vp.width);canvas.height=Math.ceil(vp.height);
+  await page.render({canvasContext:ctx,viewport:vp}).promise;return canvas;
+}
+
+async function ocrCanvas(canvas){
+  if(!window.Tesseract)throw new Error("Tesseract not loaded.");
+  const{data}=await Tesseract.recognize(canvas,"eng",{
+    tessedit_pageseg_mode:"6",
+    logger:m=>{if(m?.status){const pct=typeof m.progress==="number"?Math.round(m.progress*100):null;setOcrStatus(pct!==null?`${m.status} ${pct}%`:m.status);}}});
+  window.__lastOcrConfidence=data?.confidence??null;
+  return data?.text||"";
+}
+function preprocessCanvasForOCR(canvas){
+  // Pass through with grayscale conversion for Tesseract consistency
+  const c=document.createElement("canvas");
+  c.width=canvas.width;c.height=canvas.height;
+  const ctx=c.getContext("2d");
+  ctx.drawImage(canvas,0,0);
+  const imgData=ctx.getImageData(0,0,c.width,c.height);
+  const d=imgData.data;
+  for(let i=0;i<d.length;i+=4){
+    const gray=Math.round(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114);
+    d[i]=d[i+1]=d[i+2]=gray;
+  }
+  ctx.putImageData(imgData,0,0);
+  return c;
+}
+async function ocrImageFile(file){
+  if(!window.Tesseract)throw new Error("Tesseract not loaded.");
+  const{data}=await Tesseract.recognize(file,"eng",{logger:m=>{if(m?.status){const pct=typeof m.progress==="number"?Math.round(m.progress*100):null;setOcrStatus(pct!==null?`${m.status} ${pct}%`:m.status);}}});
+  window.__lastOcrConfidence=data?.confidence??null;
+  return data?.text||"";
+}
+
+async function extractCodesFromFile(file){
+  showOcrFail(false);
+  if(!file){setToast("Please choose a PDF or image file first.");return;}
+  const isPdf=/pdf/i.test(file.type)||/\.pdf$/i.test(file.name||"");
+  const isImg=/image/i.test(file.type)||/\.(png|jpe?g|webp)$/i.test(file.name||"");
+  const libs=await ensureOcrLibs();
+  if(isPdf&&!libs.okPdf){setOcrStatus("Error");setToast("pdf.js not loaded.");return;}
+  if(!libs.okTes){setOcrStatus("Error");setToast("OCR library (tesseract) not loaded.");return;}
+  try{
+    if(window.__datasetReady)await window.__datasetReady;
+    setOcrStatus(isPdf?"Reading PDF":"Reading image");
+    if(isPdf){
+      // 1) Try selectable text first
+      const pdfText=await extractTextFromPdf(file,2);
+      window.__lastPdfText=pdfText||"";window.__lastOcrText="";window.__lastExtractedCandidates=[];
+      window.__lastFTN=extractFTN(pdfText);window.__lastExamId=extractExamId(pdfText);window.__lastReportFields=extractAllReportFields(pdfText);
+      appendDebugSection("PDF selectable text (3000 chars)",(pdfText||"").slice(0,3000));
+      const fromText=extractCodes(pdfText,true);
+      window.__lastExtractedCandidates=fromText||[];
+      appendDebugSection("Codes from PDF text",JSON.stringify(fromText||[],null,2));
+      if(fromText&&fromText.length){
+        addExtractedCodesToTextarea(fromText);setOcrStatus("Text extracted");
+        setToast(`Found ${fromText.length} ACS code(s) from selectable PDF text.`);return;
+      }
+      // 2) Fallback: OCR - try primary scale, then additional if results seem incomplete
+      setOcrStatus("OCR (PDF scan)");window.__lastOcrConfidence=null;
+      let allOcrCodes=new Set();let bestOcrText="";let bestConf=0;let bestCodes=[];
+      const scales=[3.0,2.5,2.0];
+      for(let si=0;si<scales.length;si++){
+        const scale=scales[si];
+        setOcrStatus(si===0?"OCR (PDF scan)":`OCR retry @${scale}x`);
+        try{
+          const canvas=await renderPdfPageToCanvas(file,1,scale);
+          const ocrText=await ocrCanvas(canvas);
+          const conf=window.__lastOcrConfidence||0;
+          appendDebugSection(`OCR @${scale}x ${canvas.width}x${canvas.height} (conf=${Math.round(conf)})`,(ocrText||"").slice(0,2000));
+          const codes=extractCodes(ocrText);
+          appendDebugSection(`Codes @${scale}x`,JSON.stringify(codes||[],null,2));
+          for(const c of codes)allOcrCodes.add(c);
+          // Track the best scale (most codes wins, then highest confidence)
+          if(codes.length>bestCodes.length||(codes.length===bestCodes.length&&conf>bestConf)){
+            bestConf=conf;bestOcrText=ocrText;bestCodes=codes;
+          }
+          // Good enough: 3+ codes with decent confidence -> stop
+          if(allOcrCodes.size>=3&&conf>=75)break;
+        }catch(e){appendDebugSection(`OCR @${scale}x error`,String(e));}
+      }
+      window.__lastOcrText=bestOcrText||"";
+      if(!window.__lastFTN)window.__lastFTN=extractFTN(bestOcrText);
+      if(!window.__lastExamId)window.__lastExamId=extractExamId(bestOcrText);
+      if(!window.__lastReportFields.ftn)window.__lastReportFields=extractAllReportFields(bestOcrText);
+      const ocrConf=bestConf;
+      // Use codes from best scale, supplemented by any extras found at other scales
+      const bestSet=new Set(bestCodes.map(c=>c.toUpperCase()));
+      const extras=[...allOcrCodes].filter(c=>!bestSet.has(c.toUpperCase()));
+      const codes=[...bestCodes,...extras];
+      window.__lastExtractedCandidates=codes||[];
+      appendDebugSection("Final codes (best scale + extras)",JSON.stringify(codes,null,2));
+      if(!codes.length){
+        // Try page 2
+        try{const ab2=await file.arrayBuffer();const pdf2=await pdfjsLib.getDocument({data:new Uint8Array(ab2)}).promise;
+          if(pdf2.numPages>1){setOcrStatus("OCR (page 2)");const c2=await renderPdfPageToCanvas(file,2,2.5);const ot2=await ocrCanvas(c2);appendDebugSection("OCR p2",(ot2||"").slice(0,3000));const co2=extractCodes(ot2);if(co2.length){addExtractedCodesToTextarea(co2);setOcrStatus("Codes extracted (p2)");setToast(`Found ${co2.length} ACS code(s) from OCR (page 2).`);return;}}}catch(e2){}
+        setOcrStatus("No codes found");showOcrFail(true);setToast("Couldn\u2019t find readable ACS codes.");return;
+      }
+      addExtractedCodesToTextarea(codes);
+      if(ocrConf!==null&&ocrConf<70){
+        setOcrStatus("Low confidence");
+        showOcrFail(true,"⚠️ This PDF appears to be a low-quality scan (OCR confidence: "+Math.round(ocrConf)+"%). The codes below may be inaccurate. For reliable results, please upload the original PDF from the PSI website.");
+        setToast(`Found ${codes.length} code(s), but accuracy may be poor due to scan quality.`);
+      }else{
+        setOcrStatus("Codes extracted");setToast(`Found ${codes.length} ACS code(s) from OCR.`);
+      }
+      return;
+    }
+    if(isImg){
+      setOcrStatus("OCR (image)");window.__lastOcrConfidence=null;const ocrText=await ocrImageFile(file);
+      window.__lastPdfText="";window.__lastOcrText=ocrText||"";
+      window.__lastFTN=extractFTN(ocrText);window.__lastExamId=extractExamId(ocrText);window.__lastReportFields=extractAllReportFields(ocrText);
+      appendDebugSection("Image OCR text",(ocrText||"").slice(0,3000));
+      const conf=window.__lastOcrConfidence;
+      appendDebugSection("OCR confidence",String(conf));
+      const codes=extractCodes(ocrText);window.__lastExtractedCandidates=codes||[];
+      appendDebugSection("Codes from OCR",JSON.stringify(codes||[],null,2));
+      // Check for low-quality OCR
+      const isLowQuality=conf!==null&&conf<60;
+      const hasWeakResults=codes.length>0&&codes.length<=3&&conf!==null&&conf<75;
+      if(!codes.length){
+        setOcrStatus("No codes found");
+        showOcrFail(true,"Couldn\u2019t find readable ACS codes. If you uploaded a photo, try uploading the original PDF from the PSI website instead.");
+        setToast("Couldn\u2019t extract ACS codes from this image.");return;
+      }
+      if(isLowQuality){
+        setOcrStatus("Low confidence");
+        showOcrFail(true,"\u26a0\ufe0f The image quality is low (OCR confidence: "+Math.round(conf)+"%). The codes below may be inaccurate. For reliable results, please upload the original PDF from the PSI website.");
+        addExtractedCodesToTextarea(codes);setToast(`Found ${codes.length} code(s), but accuracy may be poor due to image quality.`);return;
+      }
+      if(hasWeakResults){
+        setOcrStatus("Low confidence");
+        showOcrFail(true,"⚠️ The image quality is low (OCR confidence: "+Math.round(conf)+"%). The codes extracted below may be inaccurate. For reliable results, please upload the original PDF from the PSI website.");
+        addExtractedCodesToTextarea(codes);setToast(`Found ${codes.length} code(s), but accuracy may be poor due to image quality.`);return;
+      }
+      setOcrStatus("Codes extracted");addExtractedCodesToTextarea(codes);setToast(`Found ${codes.length} ACS code(s) from OCR.`);return;
+    }
+    setOcrStatus("Unsupported");setToast("Unsupported file type.");
+  }catch(err){console.error(err);setOcrStatus("Error");showOcrFail(true);setToast("File extraction failed: "+(err.message||err));}
+}
+
+/**********************
+ * Rendering
+ **********************/
+function renderChips(cid,eid,counts){
+  const wrap=el(cid),empty=el(eid);wrap.innerHTML="";
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length){empty.style.display="block";return;}
+  empty.style.display="none";
+  for(const[k,v]of entries){const chip=document.createElement("div");chip.className="chip";chip.innerHTML=`<span>${escapeHTML(k)}</span> <span class="n">${v}</span>`;wrap.appendChild(chip);}
+}
+function renderUnknown(unknown){
+  const wrap=el("unknownWrap");wrap.innerHTML="";if(!unknown.length)return;
+  const box=document.createElement("div");box.className="warnbox";
+  box.innerHTML=`<strong>Unknown codes</strong> (not found in ACS_codes.csv):<ul class="warnlist">${unknown.map(c=>`<li>${escapeHTML(c)}</li>`).join("")}</ul>`;wrap.appendChild(box);
+}
+function renderTable(records){
+  const body=el("resultsBody");body.innerHTML="";
+  if(!records.length){body.innerHTML=`<tr><td colspan="5" class="small" style="padding:12px;">No matches.</td></tr>`;return;}
+  for(const r of records){const tr=document.createElement("tr");tr.innerHTML=`<td class="code">${escapeHTML(r.code)}</td><td>${escapeHTML(r.area)}</td><td>${escapeHTML(r.task)}</td><td><span class="tag">${escapeHTML(r.type||"\u2013")}</span></td><td>${escapeHTML(r.desc)}</td>`;body.appendChild(tr);}
+}
+function buildCopyText(records,unknown){
+  const lines=[];
+  if(records.length){lines.push("Matched ACS Codes:");for(const r of records)lines.push(`${r.code}\t${r.area}\t${r.task}\t${r.type}\t${r.desc}`);}else lines.push("No matched ACS codes.");
+  if(unknown.length){lines.push("");lines.push("Unknown Codes:");lines.push(unknown.join(", "));}
+  return lines.join("\n");
+}
+function setSendEnabled(on){el("btnSend").disabled=!on;}
+
+function renderAll(codes){
+  el("statFound").textContent=String(codes.length);
+  if(!codes.length){el("statMatched").textContent="0";el("statUnknown").textContent="0";el("matchStatus").textContent="0 matches";el("unknownWrap").innerHTML="";el("areaChips").innerHTML="";el("areaEmpty").style.display="block";el("btnCopy").disabled=true;el("btnPDF").disabled=true;setSendEnabled(false);window.__lastCopyText="";window.__lastPayload=null;renderTable([]);return;}
+  const matched=[],unknown=[];
+  for(const c of codes){if(ACS.has(c))matched.push(ACS.get(c));else unknown.push(c);}
+  // Preserve document order from extractCodes (don't sort alphabetically)
+  const byArea={},byType={};
+  for(const r of matched){byArea[r.area||"Unknown Area"]=(byArea[r.area||"Unknown Area"]||0)+1;byType[r.type||"Unknown Type"]=(byType[r.type||"Unknown Type"]||0)+1;}
+  el("statMatched").textContent=String(matched.length);el("statUnknown").textContent=String(unknown.length);el("matchStatus").textContent=`${matched.length} match${matched.length===1?"":"es"}`;
+  renderChips("areaChips","areaEmpty",byArea);renderUnknown(unknown);renderTable(matched);
+  el("btnCopy").disabled=!(matched.length||unknown.length);el("btnPDF").disabled=!(matched.length||unknown.length);
+  window.__lastCopyText=buildCopyText(matched,unknown);
+  window.__lastPayload={version:VERSION,timestamp:new Date().toISOString(),fields:window.__lastReportFields||{},codes:codes,matchedCount:matched.length,unknownCount:unknown.length,summaryByArea:byArea};
+  setSendEnabled(Boolean(GOOGLE_SHEET_WEBAPP_URL));
+}
+
+function createPDF(){const prev=document.title;document.title="FAA_Exam_ACS_Code_Lookup_Results";window.print();document.title=prev;}
+
+async function sendToGoogleSheet(){
+  if(!GOOGLE_SHEET_WEBAPP_URL){setToast("Google Sheet endpoint URL not set.");return;}
+  const payload=window.__lastPayload;if(!payload){setToast("Nothing to send.");return;}
+  try{
+    el("btnSend").disabled=true;setToast("Sending\u2026");
+    // Build flat row: [timestamp, examDate, FTN, examId, score%, take, code1, code2, ...]
+    const f=payload.fields||{};
+    const row=[
+      new Date().toISOString(),
+      f.examDate||"",
+      f.ftn||"",
+      f.examId||"",
+      f.score||"",
+      f.take||"",
+      ...payload.codes
+    ];
+    const sendPayload={version:VERSION,row:row};
+    const res=await fetch(GOOGLE_SHEET_WEBAPP_URL,{method:"POST",body:new URLSearchParams({payload:JSON.stringify(sendPayload)})});
+    if(!res.ok)throw new Error(`Send failed (${res.status}).`);
+    // Show results after successful send
+    el("resultsCard").style.display="";
+    setToast("Processed successfully!");
+  }catch(e){setToast(String(e.message||e));}finally{setSendEnabled(Boolean(GOOGLE_SHEET_WEBAPP_URL&&window.__lastPayload));}
+}
+
+function setProcessVisible(isVisible){const btn=el("btnSend");if(btn)btn.style.display=isVisible?"inline-flex":"none";}
+function updateNow(){renderAll(extractCodes(el("codes").value));}
+
+/**********************
+ * Init & events
+ **********************/
+async function init(){
+  try{window.__datasetReady=loadDataset();const count=await window.__datasetReady;el("dataStatus").textContent=`Loaded ${count} ACS codes`;
+    try{await ensureOcrLibs();}catch(e){console.warn(e);}updateLibStatus();setToast("");
+  }catch(e){el("dataStatus").textContent="Data load failed";el("dataStatus").style.borderColor="rgba(239,68,68,.55)";el("dataStatus").style.background="rgba(239,68,68,.10)";setToast(String(e.message||e));}
+  setSendEnabled(false);updateNow();updateLibStatus();
+}
+
+el("codes").addEventListener("input",updateNow);
+el("btnClear").addEventListener("click",()=>{
+  el("codes").value="";el("resultsBody").innerHTML=`<tr><td colspan="5" class="small" style="padding:12px;">Start typing or paste a report above &mdash; results will update automatically.</td></tr>`;
+  el("unknownWrap").innerHTML="";el("areaChips").innerHTML="";
+  el("areaEmpty").style.display="block";
+  el("resultsCard").style.display="none";
+  el("statFound").textContent="0";el("statMatched").textContent="0";el("statUnknown").textContent="0";
+  el("matchStatus").textContent="0 matches";el("btnCopy").disabled=true;el("btnPDF").disabled=true;
+  setSendEnabled(false);window.__lastCopyText="";window.__lastPayload=null;window.__lastFTN="";window.__lastExamId="";window.__lastReportFields={};setToast("");
+});
+el("btnCopy").addEventListener("click",async()=>{const text=window.__lastCopyText||"";try{await navigator.clipboard.writeText(text);setToast("Copied results to clipboard.");}catch{const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);setToast("Copied (fallback).");}});
+el("btnPDF").addEventListener("click",createPDF);
+el("btnSend").addEventListener("click",sendToGoogleSheet);
+el("btnExtractFile").addEventListener("click",()=>__onFileChosen());
+el("fileInput").addEventListener("change",__onFileChosen);
+el("fileInput").addEventListener("change",()=>{const f=el("fileInput").files?.[0];setOcrStatus(f?"Ready":"Idle");if(f)showOcrFail(false);});
+document.addEventListener("click",function(e){const popup=el("examInfoPopup");const btn=el("btnExamInfo");if(popup&&!popup.contains(e.target)&&e.target!==btn)popup.classList.remove("show");});
+
+init();
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="/images/favicon.png" type="image/png" />
+  <title>Types of Altitudes – Elevation, Pressure Altitude & Density Altitude</title>
+  <style>
+    :root{
+      --bg-0:#0a1020;
+      --bg-1:#0f1a33;
+      --panel:#0e1830;
+      --panel-2:#0b1326;
+      --stroke:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.65);
+      --btn:#1b2d57;
+      --btnHover:#243a6f;
+      --accent:#2f7cff;
+      --accent2:#49c7ff;
+      --warn:#F80590;
+      --good:#2bd576;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 50% 0%, #16264a 0%, var(--bg-0) 55%, #060a14 100%);
+      color:var(--text);
+    }
+
+    .frame{
+      width:min(1200px, 96vw);
+      height:min(720px, 82vh);
+      margin:4vh auto;
+      border-radius:22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      padding:10px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .app{
+      height:100%;
+      border-radius:16px;
+      overflow:hidden;
+      background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.35));
+      position:relative;
+    }
+
+    .viz{
+      position:absolute;
+      inset:0;
+      background: linear-gradient(180deg, #dfe7f7 0%, #d7e0f0 100%);
+    }
+
+    .hud{
+      position:absolute;
+      inset:14px 14px auto 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      pointer-events:none;
+    }
+    .pill{
+      pointer-events:none;
+      background: rgba(10,16,32,.82);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+      letter-spacing:.2px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+    }
+    .pill strong{font-weight:800}
+    .pill .muted{color:var(--muted)}
+    .pill.warn strong{ color: var(--warn); }
+
+    canvas{display:block; width:100%; height:100%}
+
+    .statusText{
+      position:absolute;
+      left:14px;
+      right:14px;
+      max-width: 700px;
+      bottom:14px;
+      padding:12px 14px;
+      border-radius:16px;
+      background: rgba(255,255,255,.78);
+      border:1px solid rgba(10,16,32,.14);
+      color: rgba(10,16,32,.92);
+      font-size:13px;
+      font-weight:700;
+      line-height:1.35;
+      box-shadow: 0 10px 28px rgba(0,0,0,.18);
+      backdrop-filter: blur(6px);
+    }
+    .statusText.good{ color: #0b5a2b; }
+    .statusText.bad{ color: #8a004e; }
+
+    .controls{
+      background: radial-gradient(900px 700px at 50% 0%, rgba(70,120,255,.20) 0%, rgba(10,16,32,.88) 55%, rgba(6,10,20,.96) 100%);
+      position:absolute;
+      right:12px;
+      top:12px;
+      bottom:12px;
+      width:380px;
+      overflow:auto;
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .titlebar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(8px);
+    }
+    .titlebar .h{ font-weight:800; letter-spacing:.3px; }
+    .titlebar .sub{ font-size:12px; color:var(--muted); }
+
+    .panel{
+      border-radius:16px;
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+      padding:12px;
+    }
+    .row{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .label{
+      font-size:12px;
+      color:rgba(255,255,255,.78);
+      letter-spacing:.25px;
+    }
+    .val{
+      font-size:13px;
+      font-weight:800;
+      font-variant-numeric: tabular-nums;
+      color:rgba(255,255,255,.92);
+      text-align:right;
+    }
+    .val .unit{ color: rgba(255,255,255,.70); font-weight:600; }
+
+    .sliderWrap{ margin-top:10px; }
+    input[type="range"]{
+      width:100%;
+      -webkit-appearance:none;
+      appearance:none;
+      height:8px;
+      border-radius:999px;
+      background: rgba(255,255,255,.12);
+      outline:none;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.14);
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:18px;
+      height:18px;
+      border-radius:999px;
+      background: linear-gradient(180deg, rgba(73,199,255,.95), rgba(47,124,255,.92));
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow: 0 10px 20px rgba(0,0,0,.35);
+    }
+    input[type="range"]::-moz-range-thumb{
+      width:18px;
+      height:18px;
+      border-radius:999px;
+      background: linear-gradient(180deg, rgba(73,199,255,.95), rgba(47,124,255,.92));
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow: 0 10px 20px rgba(0,0,0,.35);
+    }
+
+    .axisLabels{
+      margin-top:6px;
+      display:flex;
+      justify-content:space-between;
+      color: rgba(255,255,255,.60);
+      font-size:11px;
+      user-select:none;
+    }
+
+    .inline{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .btnSmall{
+      margin-left:auto;
+      padding:9px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(73,199,255,.14), rgba(27,45,87,.92));
+      color: rgba(255,255,255,.92);
+      font-weight:800;
+      letter-spacing:.2px;
+      cursor:pointer;
+      transition: transform .06s ease, filter .15s ease, background .15s ease;
+      flex:0 0 auto;
+      user-select:none;
+    }
+    .btnSmall:hover{ filter: brightness(1.05); background: linear-gradient(180deg, rgba(73,199,255,.20), rgba(36,58,111,.95)); }
+    .btnSmall:active{ transform: translateY(1px) scale(.995); }
+
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      color:rgba(255,255,255,.84);
+      line-height:1.35;
+      white-space:pre-wrap;
+      word-break:break-word;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(73,199,255,.16), rgba(27,45,87,.92));
+      color: rgba(255,255,255,.92);
+      font-weight:800;
+      letter-spacing:.2px;
+      cursor:pointer;
+      transition: transform .06s ease, filter .15s ease, background .15s ease;
+    }
+    .btn:hover{ filter: brightness(1.05); background: linear-gradient(180deg, rgba(73,199,255,.22), rgba(36,58,111,.95)); }
+    .btn:active{ transform: translateY(1px) scale(.995); }
+
+    .foot{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      padding:0 4px;
+      margin-top:8px;
+      line-height:1.35;
+    }
+
+    @media (min-width: 920px){
+      .statusText{ right: 404px; }
+    }
+
+    @media (max-width: 920px){
+      .viz{ position:relative; inset:auto; }
+      .frame{ width:96vw; height:92vh; margin:2vh auto; }
+      .app{ display:flex; flex-direction:column; }
+      .viz{ border-bottom:1px solid rgba(0,0,0,.12); min-height: 52vh; }
+      .controls{ position:relative; width:auto; right:auto; top:auto; bottom:auto; border-radius:0; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="frame">
+    <div class="app">
+      <!-- LEFT: Visualization -->
+      <div class="viz">
+        <div class="hud">
+          <div class="pill">Altitude: <strong id="elevHud">—</strong> <span class="muted">ft</span></div>
+          <div class="pill">Pressure Alt: <strong id="paHud">—</strong> <span class="muted">ft</span></div>
+          <div class="pill warn">Density Alt: <strong id="daHud">—</strong> <span class="muted">ft</span></div>
+        </div>
+        <canvas id="vizCanvas"></canvas>
+        <div id="statusText" class="statusText">—</div>
+      </div>
+
+      <!-- RIGHT: Controls -->
+      <div class="controls">
+        <div class="titlebar">
+          <button class="btn" id="randomBtn" style="margin:0;">Randomize scenario</button>
+        </div>
+
+        <div class="panel">
+          <div class="row">
+            <div class="label">Altitude</div>
+            <div class="val"><span id="elevVal">0</span><span class="unit"> ft</span></div>
+          </div>
+          <div class="sliderWrap">
+            <input id="elev" type="range" min="0" max="9000" step="100" value="0" />
+            <div class="axisLabels"><span>0</span><span class="mid">4500</span><span>9000</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="row">
+            <div class="label">Altimeter Setting (Pressure)</div>
+            <div class="val"><span id="pressVal">29.92</span><span class="unit"> inHg</span></div>
+          </div>
+          <div class="sliderWrap">
+            <input id="press" type="range" min="26" max="32" step="0.1" value="29.92" />
+            <div class="axisLabels"><span>26.0</span><span class="mid">29.9</span><span>32.0</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="row">
+            <div class="inline" style="width:100%">
+              <div class="label">Outside Air Temperature</div>
+              <button class="btnSmall" id="isaBtn" title="Set temperature to ISA for the selected airport elevation">ISA</button>
+            </div>
+            <div class="val"><span id="tempVal">15</span><span class="unit">°C</span></div>
+          </div>
+          <div class="sliderWrap">
+            <input id="temp" type="range" min="-20" max="45" step="1" value="15" />
+            <div class="axisLabels"><span>-20</span><span class="mid">15</span><span>45</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="mono" id="formulaBox">—</div>
+        </div>
+
+        <button class="btn" id="resetBtn">Reset to Standard</button>
+
+        <div class="foot">
+          Tip: hit <strong>ISA</strong> then change pressure to see PA change without changing OAT.<br>
+          <span style="font-variant-numeric:tabular-nums">Std: 29.92 inHg, 15°C @ SL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const el = (id) => document.getElementById(id);
+
+  const elev = el('elev');
+  const press = el('press');
+  const temp = el('temp');
+
+  const elevVal = el('elevVal');
+  const pressVal = el('pressVal');
+  const tempVal = el('tempVal');
+
+  const elevHud = el('elevHud');
+  const paHud = el('paHud');
+  const daHud = el('daHud');
+
+  const formulaBox = el('formulaBox');
+  const statusText = el('statusText');
+  const isaBtn = el('isaBtn');
+  const resetBtn = el('resetBtn');
+  const randomBtn = el('randomBtn');
+
+  // Canvas
+  const canvas = el('vizCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Plane image at density altitude line (same as original: images/plane_side.png)
+  const planeImg = new Image();
+  let planeReady = false;
+  planeImg.onload = () => { planeReady = true; draw(); };
+  planeImg.src = 'images/plane_side.png';
+
+  function clamp(v, mn, mx){ return Math.max(mn, Math.min(mx, v)); }
+  function roundRect(ctx, x, y, w, h, r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+  }
+
+  function isaTempAtFt(ft){
+    // ISA: 15°C at sea level, lapse ~1.98°C per 1000 ft up to the troposphere
+    return 15 - 2*(ft/1000);
+  }
+
+  function pressureAltitudeFt(fieldElevFt, altSettingInHg){
+    // Standard training approximation:
+    // PA = Field Elevation + (29.92 - Altimeter Setting) * 1000
+    return (fieldElevFt + (29.92 - altSettingInHg) * 1000);
+  }
+
+  function densityAltitudeFt(paFt, oatC){
+    // Training approximation:
+    // DA = PA + 120 * (OAT - ISA_temp_at_PA)
+    const isaC = isaTempAtFt(paFt);
+    return (paFt + 120 * (oatC - isaC));
+  }
+
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function compute(){
+    const elevFt = Number(elev.value);
+    const altSetting = Number(press.value);
+    const oatC = Number(temp.value);
+
+    const pa = pressureAltitudeFt(elevFt, altSetting);
+    const da = densityAltitudeFt(pa, oatC);
+
+    return { elevFt, altSetting, oatC, pa, da };
+  }
+
+  function classifyStatus(elevFt, pa, da){
+    // If DA is effectively equal to altitude (within 50 ft), treat as "same"
+    const tol = 50;
+    if (Math.abs(da - elevFt) <= tol){
+      return {
+        text: "Due to conditions close to or at standard, the aircraft will perform the same as the altitude at which it's at.",
+        cls: ""
+      };
+    }
+
+    const paHigher = pa > elevFt + tol;
+    const paLower  = pa < elevFt - tol;
+    const daHigher = da > elevFt + tol;
+    const daLower  = da < elevFt - tol;
+
+    if (paHigher && daHigher){
+      return {
+        text: "Due to temperature and pressure variations, the aircraft will perform worse than the altitude at which it's at.",
+        cls: "bad"
+      };
+    }
+    if ((paLower || (!paHigher && !paLower)) && daHigher){
+      return {
+        text: "Even though pressure conditions are favorable, because of the higher-than-standard temperature conditions, the aircraft will perform worse than the altitude at which it's at.",
+        cls: "bad"
+      };
+    }
+    if (paHigher && daLower){
+      return {
+        text: "Even though pressure conditions are less favorable, because of the lower-than-standard temperature conditions, the aircraft will perform better than the altitude at which it's at.",
+        cls: "good"
+      };
+    }
+    if (daLower && (paLower || (!paHigher && !paLower))){
+      return {
+        text: "Due to temperature and pressure variations, the aircraft will perform better than the altitude at which it's at.",
+        cls: "good"
+      };
+    }
+
+    // Fallback (should be rare)
+    return { text: "—", cls: "" };
+  }
+
+  function fmtFt(n){
+    const x = Math.round(n);
+    return x.toLocaleString(undefined);
+  }
+
+  function updateLabels(){
+    const { elevFt, altSetting, oatC, pa, da } = compute();
+
+    elevVal.textContent = fmtFt(elevFt);
+    pressVal.textContent = altSetting.toFixed(2);
+    tempVal.textContent = oatC;
+
+    elevHud.textContent = fmtFt(elevFt);
+    paHud.textContent = fmtFt(pa);
+    daHud.textContent = fmtFt(da);
+
+    const paTerm = (29.92 - altSetting);
+    const isaAtPA = isaTempAtFt(pa);
+
+    formulaBox.textContent =
+`Pressure altitude (ft):
+  PA = Elev + (29.92 − AltSet) × 1000
+  PA = ${fmtFt(elevFt)} + (${(29.92).toFixed(2)} − ${altSetting.toFixed(2)}) × 1000
+  PA = ${fmtFt(elevFt)} + (${paTerm.toFixed(2)}) × 1000
+  PA = ${fmtFt(pa)} ft
+
+Density altitude (ft):
+  DA = PA + 120 × (OAT − ISA@PA)
+  ISA@PA = 15 − 2 × (PA/1000)
+  ISA@PA = 15 − 2 × (${(pa/1000).toFixed(2)})
+  ISA@PA = ${isaAtPA.toFixed(1)} °C
+  DA = ${fmtFt(pa)} + 120 × (${oatC.toFixed(0)} − ${isaAtPA.toFixed(1)})
+  DA = ${fmtFt(da)} ft`;
+
+
+    const status = classifyStatus(elevFt, pa, da);
+    statusText.textContent = status.text;
+    statusText.classList.remove('good','bad');
+    if (status.cls) statusText.classList.add(status.cls);
+  }
+
+  function yForAlt(ft, scale){
+    // Top is higher altitude. scale contains {minAlt, maxAlt, padTop, padBot, h}
+    const clamped = clamp(ft, scale.minAlt, scale.maxAlt);
+    const t = (clamped - scale.minAlt) / (scale.maxAlt - scale.minAlt);
+    return (scale.h - scale.padBot) - t * (scale.h - scale.padTop - scale.padBot);
+  }
+
+  function drawLine(y, color, alpha=1){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(44, y);
+    ctx.lineTo(canvas.clientWidth - 44 - reservedRight(), y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function reservedRight(){
+    // leave room for the controls overlay on wide layouts
+    return (canvas.clientWidth >= 920) ? 390 : 0;
+  }
+
+  function drawTag(x, y, title, desc, color, showPlane=false){
+    const padX = 10, padY = 8;
+    ctx.save();
+
+    const maxW = 340;
+    ctx.font = "800 13px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+    const tW = Math.min(maxW, ctx.measureText(title).width);
+    ctx.font = "600 12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+    const dW = Math.min(maxW, ctx.measureText(desc).width);
+
+    const boxW = Math.max(tW, dW) + padX*2 + 30;
+    const boxH = 44;
+
+    ctx.fillStyle = "rgba(10,16,32,.82)";
+    ctx.strokeStyle = "rgba(255,255,255,.14)";
+    ctx.lineWidth = 1;
+    roundRect(ctx, x, y - boxH/2, boxW, boxH, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    // little colored dot
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x+14, y, 5, 0, Math.PI*2);
+    ctx.fill();
+
+    // text
+    ctx.fillStyle = "rgba(255,255,255,.94)";
+    ctx.font = "800 13px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+    ctx.fillText(title, x+26, y-4);
+
+    ctx.fillStyle = "rgba(255,255,255,.72)";
+    ctx.font = "600 12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+    ctx.fillText(desc, x+26, y+14);
+
+    ctx.restore();
+
+    if (showPlane && planeReady){
+      // plane on the right side, centered on the DA line
+      const desiredW = 240;
+      const aspect = (planeImg.naturalHeight || planeImg.height) / (planeImg.naturalWidth || planeImg.width || 1);
+      const desiredH = desiredW * aspect;
+
+      const rightX = canvas.clientWidth - 44 - reservedRight() - desiredW;
+      const imgY = y - desiredH/2;
+
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,.25)";
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 3;
+      ctx.drawImage(planeImg, rightX, imgY, desiredW, desiredH);
+      ctx.restore();
+    }
+  }
+
+  function drawScaleTicks(scale){
+    ctx.save();
+    const x0 = 44;
+    const x1 = canvas.clientWidth - 44 - reservedRight();
+    ctx.strokeStyle = "rgba(10,16,32,.18)";
+    ctx.fillStyle = "rgba(10,16,32,.70)";
+    ctx.lineWidth = 1;
+
+    ctx.font = "700 11px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+    for (let ft = Math.ceil(scale.minAlt/1000)*1000; ft <= scale.maxAlt; ft += 1000){
+      const y = yForAlt(ft, scale);
+      // tick
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0+10, y);
+      ctx.stroke();
+      // label
+      ctx.fillText(`${ft.toLocaleString()} ft`, x0+14, y+4);
+      // faint horizontal guide
+      ctx.strokeStyle = "rgba(10,16,32,.06)";
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x1, y);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(10,16,32,.18)";
+    }
+    ctx.restore();
+  }
+
+  function draw(){
+    updateLabels();
+    const { elevFt, pa, da } = compute();
+
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+
+    // background
+    ctx.clearRect(0,0,w,h);
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0, "rgba(223,231,247,1)");
+    grad.addColorStop(1, "rgba(215,224,240,1)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,w,h);
+
+    // scale bounds: show a little above/below the three values, but keep sensible limits
+    const maxVal = Math.max(elevFt, pa, da);
+    const minVal = Math.min(elevFt, pa, da);
+
+    let minAlt = Math.floor((minVal - 1500)/500)*500;
+    let maxAlt = Math.ceil((maxVal + 1500)/500)*500;
+
+    minAlt = clamp(minAlt, -1000, 12000);
+    maxAlt = clamp(maxAlt, 2000, 16000);
+    if (maxAlt - minAlt < 6000) {
+      const mid = (maxAlt + minAlt)/2;
+      minAlt = Math.floor((mid - 3000)/500)*500;
+      maxAlt = Math.ceil((mid + 3000)/500)*500;
+    }
+
+    const scale = { minAlt, maxAlt, padTop: 28, padBot: 28, h };
+
+    drawScaleTicks(scale);
+
+    const yElev = yForAlt(elevFt, scale);
+    const yPA = yForAlt(pa, scale);
+    const yDA = yForAlt(da, scale);
+
+    // lines
+    drawLine(yElev, "rgba(47,124,255,1)", 0.95);
+    drawLine(yPA, "rgba(73,199,255,1)", 0.95);
+    drawLine(yDA, "rgba(248,5,144,1)", 0.98);
+
+    // tags
+    drawTag(54, yElev, `Altitude: ${fmtFt(elevFt)} ft`, "where the airplane is", "rgba(47,124,255,1)");
+    drawTag(54, yPA, `Pressure altitude: ${fmtFt(pa)} ft`, "Altitude corrected for non-standard pressure", "rgba(73,199,255,1)");
+    drawTag(54, yDA, `Density altitude: ${fmtFt(da)} ft`, 'The "performance" altitude', "rgba(248,5,144,1)", true);
+  }
+
+  function onAnyChange(){ draw(); }
+
+  [elev, press, temp].forEach(inp => {
+    inp.addEventListener('input', onAnyChange);
+    inp.addEventListener('change', onAnyChange);
+  });
+
+  isaBtn.addEventListener('click', () => {
+    const elevFt = Number(elev.value);
+    // Spec: ISA button sets ISA temperature for the selected altitude (airport elevation)
+    const isa = isaTempAtFt(elevFt);
+    temp.value = Math.round(isa); // matches slider 1°C increments
+    onAnyChange();
+  });
+
+  randomBtn.addEventListener('click', () => {
+    // Randomize within slider min/max ranges (respecting each slider's step)
+    const elevMin = Number(elev.min), elevMax = Number(elev.max), elevStep = Number(elev.step);
+    const pressMin = Number(press.min), pressMax = Number(press.max), pressStep = Number(press.step);
+    const tempMin = Number(temp.min), tempMax = Number(temp.max), tempStep = Number(temp.step);
+
+    const randStep = (mn, mx, step) => {
+      const nSteps = Math.round((mx - mn) / step);
+      const k = Math.floor(Math.random() * (nSteps + 1));
+      // avoid float drift by rounding to nearest step
+      const val = mn + k * step;
+      return Math.round(val / step) * step;
+    };
+
+    elev.value = randStep(elevMin, elevMax, elevStep).toFixed(0);
+    press.value = randStep(pressMin, pressMax, pressStep).toFixed(2);
+    temp.value = randStep(tempMin, tempMax, tempStep).toFixed(0);
+
+    onAnyChange();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    elev.value = 0;
+    press.value = 29.92;
+    temp.value = 15;
+    onAnyChange();
+  });
+
+  // Init
+  onAnyChange();
+})();
+</script>
+</body>
+</html>

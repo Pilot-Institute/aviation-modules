@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wind / Crab Angle Prototype (Yoke → Bank → Heading)</title>
+  <style>
+    :root{
+      --bg-0:#0a1020;
+      --bg-1:#0f1a33;
+      --panel:#0e1830;
+      --panel-2:#0b1326;
+      --stroke:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.65);
+      --btn:#1b2d57;
+      --btnHover:#243a6f;
+      --accent:#2f7cff;
+      --accent2:#49c7ff;
+      --good:#2bd576;
+      --warn:#ffcc66;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 50% 0%, #16264a 0%, var(--bg-0) 55%, #060a14 100%);
+      color:var(--text);
+    }
+
+    .frame{
+      width:min(1200px, 96vw);
+      height:min(720px, 80vh);
+      margin:4vh auto;
+      border-radius:22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      padding:10px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .app{
+      height:100%;
+      border-radius:16px;
+      overflow:hidden;
+      background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.35));
+      display:grid;
+      grid-template-columns: 1.25fr .85fr; /* left = flight, right = controls */
+    }
+
+    .flight{
+      position:relative;
+      background: linear-gradient(180deg, #dfe7f7 0%, #d7e0f0 100%);
+      border-right:1px solid rgba(0,0,0,.12);
+    }
+
+    .hud{
+      position:absolute;
+      inset:14px 14px auto 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      pointer-events:none;
+    }
+    .pill{
+      pointer-events:none;
+      background: rgba(10,16,32,.82);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+      letter-spacing:.2px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    }
+    .pill strong{font-weight:700}
+    .pill .muted{color:var(--muted)}
+    .pill.good strong{ color: var(--good); }
+    .pill.warn strong{ color: var(--warn); }
+
+    canvas{display:block; width:100%; height:100%}
+
+    .controls{
+      background: radial-gradient(900px 700px at 50% 0%, rgba(70,120,255,.20) 0%, rgba(10,16,32,.88) 55%, rgba(6,10,20,.96) 100%);
+      position:relative;
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .titlebar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(8px);
+    }
+    .titlebar .h{
+      font-weight:700;
+      letter-spacing:.3px;
+    }
+    .titlebar .sub{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .yokeWrap{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:16px;
+      background: rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+      position:relative;
+      overflow:hidden;
+    }
+    .yokeHint{
+      position:absolute;
+      bottom:12px;
+      left:12px;
+      right:12px;
+      font-size:12px;
+      color:rgba(255,255,255,.70);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      pointer-events:none;
+    }
+    .readouts{
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Simple “3D-ish” yoke using CSS */
+    .yoke{
+      width:min(360px, 92%);
+      aspect-ratio: 1.25/1;
+      position:relative;
+      transform-origin: 50% 55%;
+      filter: drop-shadow(0 18px 26px rgba(0,0,0,.55));
+      cursor: grab;
+      user-select:none;
+      touch-action:none;
+    }
+    .yoke:active{cursor:grabbing}
+
+    .yoke img#yokeImg{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      pointer-events:none; /* dragging handled by container */
+      user-select:none;
+    }
+    .yoke .gripL, .yoke .gripR{
+      position:absolute;
+      top:18%;
+      width:25%;
+      height:52%;
+      border-radius: 60px;
+      background: linear-gradient(180deg, #141a25 0%, #0b0f16 80%);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:
+        inset 0 10px 18px rgba(255,255,255,.05),
+        inset 0 -14px 20px rgba(0,0,0,.55);
+    }
+    .windBtn:hover{background: linear-gradient(180deg, rgba(73,199,255,.20), rgba(36,58,111,.95))}
+    .windBtn:active{transform: translateY(1px) scale(.995)}
+
+    .foot{
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      color:var(--muted);
+      font-size:12px;
+      padding:0 4px;
+    }
+    .kbd{
+      border:1px solid rgba(255,255,255,.18);
+      padding:2px 8px;
+      border-radius:8px;
+      background: rgba(255,255,255,.06);
+      color:rgba(255,255,255,.85);
+      font-variant-numeric: tabular-nums;
+    }
+  
+    /* Responsive: on mobile stack Flight (top) and Controls (bottom) */
+    @media (max-width: 860px){
+      .frame{
+        width: 96vw;
+        height: 92vh;
+        margin: 2vh auto;
+      }
+      .app{
+        grid-template-columns: 1fr;
+        grid-template-rows: 1.05fr 0.95fr;
+      }
+      .flight{
+        border-right: none;
+        border-bottom: 1px solid rgba(0,0,0,.12);
+      }
+      /* Switch controls to grid so the button never gets pushed off-screen */
+      .controls{
+        padding: 14px;
+        display: grid;
+        grid-template-rows: auto 1fr auto auto;
+        gap: 12px;
+      }
+      .titlebar{ padding: 10px 12px; }
+      .yokeWrap{ min-height: 220px; }
+      .windBtn{ width: 100%; }
+      .foot{ align-items:flex-start; }
+    }
+
+  
+    /* Wind pill: 2-column layout (values left, vector right) */
+    .windPill{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 10px;
+    }
+    .windPill .windLeft{
+      display:flex;
+      flex-direction:column;
+      line-height:1.05;
+      min-width:74px;
+      align-items:center;
+      text-align:center;
+    }
+    .windPill .windDeg{
+      font-size:13px;
+    }
+    .windPill .windSpd{
+      font-size:12px;
+      color: rgba(255,255,255,.80);
+      margin-top:2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .windPill .windRight{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:74px;
+      height:44px;
+      border-left:1px solid rgba(255,255,255,.10);
+      padding-left:10px;
+    }
+    #windIcon{ display:block; }
+
+
+    /* Airplane overlay (GIF) centered over the flight canvas so animation plays */
+    #airplaneSprite{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform: translate(-50%, -50%) rotate(0deg);
+      width: min(320px, 46%);
+      height: auto;
+      pointer-events:none;
+      user-select:none;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));
+      image-rendering: auto;
+    }
+
+    @media (max-width: 860px){
+      #airplaneSprite{
+        width: min(300px, 58%);
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="app">
+      <!-- LEFT: Flight View -->
+      <div class="flight">
+        <div class="hud">          <div class="pill windPill" id="windPill">
+            <div class="windLeft">
+              <div class="windDeg"><strong id="windDeg">0°</strong></div>
+              <div class="windSpd"><span id="windKts">0 kts</span></div>
+            </div>
+            <div class="windRight" aria-hidden="true">
+              <canvas id="windIcon" width="64" height="44"></canvas>
+            </div>
+          </div>
+          <div class="pill">Heading: <strong id="headingReadout">0°</strong></div>
+          <div class="pill">XTK: <strong id="xtkReadout">0</strong> <span class="muted">px</span></div>
+          <div class="pill good" id="wingsPill">Wings: <strong id="wingsReadout">LEVEL</strong></div>
+        </div>
+        <canvas id="sim"></canvas>
+        <img id="airplaneSprite" src="/images/Airplane.gif" alt="Airplane" draggable="false" />
+      </div>
+
+      <!-- RIGHT: Controls -->
+      <div class="controls">
+        <div class="titlebar">
+          <div>
+            <div class="h">Controls</div>
+            <div class="sub">Drag yoke left/right to bank; release to hold heading</div>
+          </div>
+          <div class="sub readouts"><span class="kbd">Mouse / Touch</span></div>
+        </div>
+
+        <div class="yokeWrap" id="yokeWrap">
+          <div class="yoke" id="yoke" aria-label="Yoke control">
+            <img id="yokeImg" alt="Control yoke" src="/images/Yoke.png" draggable="false" />
+          </div>
+          <div class="yokeHint">
+            <span>← bank</span>
+            <span class="readouts">Bank: <strong id="bankReadout">0°</strong></span>
+            <span>bank →</span>
+          </div>
+        </div>
+
+        <button class="windBtn" id="windBtn">Random Wind</button>
+
+        <div class="foot">
+          <span>Goal: keep the airplane centered on the desired track.</span>
+          <span><span class="kbd">←</span>/<span class="kbd">→</span> or <span class="kbd">A</span>/<span class="kbd">D</span> bank · <span class="kbd">R</span> wind</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===== Canvas setup (high-DPI) =====
+  const canvas = document.getElementById('sim');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // ===== UI refs =====
+  const yokeEl = document.getElementById('yoke');
+  const windBtn = document.getElementById('windBtn');
+  const windDegEl = document.getElementById('windDeg');
+  const windKtsEl = document.getElementById('windKts');
+  const windIcon = document.getElementById('windIcon');
+  const headingReadout = document.getElementById('headingReadout');
+  const bankReadout = document.getElementById('bankReadout');
+  const xtkReadout = document.getElementById('xtkReadout');
+  const wingsPill = document.getElementById('wingsPill');
+  const wingsReadout = document.getElementById('wingsReadout');
+
+  const airplaneSprite = document.getElementById('airplaneSprite');
+
+  // ===== Simulation parameters =====
+  const AIRSPEED = 140;        // px/sec (airspeed for feel)
+  const WIND_MAX = 90;         // px/sec max wind magnitude
+  const YOKE_MAX_DEG = 28;     // visual/interaction cap (how far user can pull)
+  const BANK_SNAP_DEG = 2;     // snap-to-center zone
+  const TRACK_POINTS = 900;    // history length (longer so track reaches bottom of view)
+  const TURN_RATE_DEG_PER_SEC_AT_FULL = 22; // heading change rate at full yoke deflection
+  const RETURN_TO_CENTER_SECONDS = 1.5;     // yoke return duration
+
+  // World axes:
+  // +y = north (forward), +x = east (right)
+  // HeadingRad = 0 means pointing north.
+  // Camera keeps aircraft centered; background scroll is effect of motion.
+
+  const state = {
+    time: performance.now(),
+    // aircraft/world position (camera follows this)
+    pos: { x: 0, y: 0 },
+    headingRad: 0,   // aircraft heading (unbounded)
+    bankDeg: 0,      // current bank input (deg)
+    bankDegTarget: 0, // where the yoke is returning to (deg)
+    // wind vector in world coords (px/sec) and display
+    wind: { x: 0, y: 0 },
+    windKts: 0,
+    windDeg: 0,  // direction wind is going toward (vector direction)
+    // track history in world coords
+    track: [],
+    // subtle ground tile offset
+    seed: Math.random() * 9999,
+  };
+
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+  
+    function computeWindFromDeg(){
+    // Match the wind arrow as drawn in the small icon (canvas y axis is down).
+    // Treat "north" as up on screen => north component = -vyCanvas.
+    const vx = state.wind.x;         // east component
+    const vyCanvas = state.wind.y;   // positive values draw downward
+    const north = -vyCanvas;
+    const east = vx;
+
+    // Bearing TO (0=north, 90=east, 180=south, 270=west)
+    const toDeg = (Math.atan2(east, north) * 180 / Math.PI + 360) % 360;
+
+    // Aviation reports wind FROM direction
+    let fromDeg = (toDeg + 180) % 360;
+    if (fromDeg === 0) fromDeg = 360;
+    return { fromDeg, toDeg };
+  }
+
+function updateWindPill(){
+    const { fromDeg, toDeg } = computeWindFromDeg();
+    // store for any other uses
+    state.windDeg = fromDeg;
+    state.windToDeg = toDeg;
+
+    windDegEl.textContent = `${Math.round(fromDeg)}°`;
+    windKtsEl.textContent = `${state.windKts} kts`;
+    drawWindIcon();
+}
+
+  function drawWindIcon(){
+    const c = windIcon;
+    const g = c.getContext('2d');
+    const w = c.width, h = c.height;
+    g.clearRect(0,0,w,h);
+
+    // background subtle
+    g.fillStyle = 'rgba(255,255,255,.06)';
+    g.beginPath();
+    const r = 10;
+    g.moveTo(r,0); g.arcTo(w,0,w,h,r); g.arcTo(w,h,0,h,r); g.arcTo(0,h,0,0,r); g.arcTo(0,0,w,0,r);
+    g.closePath();
+    g.fill();
+
+    // vector
+    const vx = state.wind.x, vy = state.wind.y;
+    const mag = Math.hypot(vx,vy);
+    const ang = Math.atan2(vy,vx);
+
+    const maxLen = 24;
+    const len = (state.windKts > 0) ? maxLen : 0; // fixed length for visibility
+
+    const cx = w/2, cy = h/2;
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(ang);
+
+    g.strokeStyle = 'rgba(47,124,255,.95)';
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(-len/2, 0);
+    g.lineTo(len/2, 0);
+    g.stroke();
+
+    if (len > 6){
+      g.fillStyle = 'rgba(47,124,255,.95)';
+      g.beginPath();
+      g.moveTo(len/2, 0);
+      g.lineTo(len/2 - 10, -7);
+      g.lineTo(len/2 - 10,  7);
+      g.closePath();
+      g.fill();
+    }
+    g.restore();
+  }
+
+  // Keyboard input state
+  let keyLeft = false;
+  let keyRight = false;
+
+// ===== Random wind generation =====
+  function setRandomWind() {
+    // Direction the wind is GOING TOWARD (vector direction).
+    const dir = Math.random() * Math.PI * 2;
+    // Speed in "kts" for display; map to px/sec.
+    const kts = Math.floor(6 + Math.random() * 22); // 6–28 kts
+    const mag = (kts / 28) * WIND_MAX;
+
+    state.wind.x = Math.cos(dir) * mag;
+    state.wind.y = Math.sin(dir) * mag;
+    state.windKts = kts;
+        // Convert math angle (0°=east, CCW+) to compass bearing (0°=north, CW+)
+updateWindPill();
+  }
+
+  windBtn.addEventListener('click', setRandomWind);
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+
+    if (k === 'r') {
+      setRandomWind();
+      return;
+    }
+
+    // Keyboard yoke/bank control:
+    // Left: ArrowLeft or 'a'   Right: ArrowRight or 'd'
+    if (e.key === 'ArrowLeft' || k === 'a') {
+      keyLeft = true;
+      e.preventDefault();
+    }
+    if (e.key === 'ArrowRight' || k === 'd') {
+      keyRight = true;
+      e.preventDefault();
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    if (e.key === 'ArrowLeft' || k === 'a') keyLeft = false;
+    if (e.key === 'ArrowRight' || k === 'd') keyRight = false;
+  });
+
+  // Initialize wind pill
+  updateWindPill();
+
+// ===== Yoke interaction (bank input; snap-to-center detent) =====
+  let dragging = false;
+  let dragStartX = 0;
+  let startBank = 0;
+
+  function pointerDown(e){
+    dragging = true;
+    yokeEl.setPointerCapture?.(e.pointerId);
+    dragStartX = e.clientX;
+    startBank = state.bankDeg;
+    state.bankDegTarget = state.bankDeg;
+  }
+
+  function pointerMove(e){
+    if(!dragging) return;
+
+    const dx = e.clientX - dragStartX;
+
+    // Map pixels -> bank degrees (momentary input)
+    const pxToDeg = YOKE_MAX_DEG / 160; // 160px to max yoke deflection
+    let bank = startBank + dx * pxToDeg;
+
+    // Clamp yoke deflection for interaction comfort
+    bank = clamp(bank, -YOKE_MAX_DEG, YOKE_MAX_DEG);
+
+    // Snap-to-center detent
+    if (Math.abs(bank) <= BANK_SNAP_DEG) bank = 0;
+
+    state.bankDeg = bank;
+    state.bankDegTarget = bank;
+  }
+
+  function pointerUp(){
+    dragging = false;
+    // Release: yoke eases back to neutral over time
+    state.bankDegTarget = 0;
+  }
+
+  yokeEl.addEventListener('pointerdown', pointerDown);
+  window.addEventListener('pointermove', pointerMove);
+  window.addEventListener('pointerup', pointerUp);
+
+  // ===== Rendering helpers =====
+  function roundRect(ctx, x, y, w, h, r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawRunwayAndGround(camX, camY, w, h) {
+    // Ground: subtle moving “snow speckles”
+    ctx.fillStyle = '#dde5f5';
+    ctx.fillRect(0,0,w,h);
+
+    // Speckles (cheap noise)
+    const spacing = 34;
+    const ox = ((camX * 0.12) % spacing + spacing) % spacing;
+    const oy = ((camY * 0.12) % spacing + spacing) % spacing;
+    for(let y = -spacing; y < h + spacing; y += spacing){
+      for(let x = -spacing; x < w + spacing; x += spacing){
+        const nx = x + ox;
+        const ny = y + oy;
+        const r = 1.2 + ((Math.sin((nx+state.seed)*0.14) + Math.cos((ny-state.seed)*0.12))*0.5 + 0.5) * 2.2;
+        ctx.fillStyle = 'rgba(120,140,170,.18)';
+        ctx.beginPath();
+        ctx.arc(nx, ny, r, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    // Runway centered at world x = 0 (vertical strip)
+    const runwayHalf = 44;
+    const centerX = w/2 - camX; // runway x relative to camera
+    ctx.fillStyle = 'rgba(85,95,110,.92)';
+    ctx.fillRect(centerX - runwayHalf, -2000, runwayHalf*2, h + 4000);
+
+    // Runway edge lines
+    ctx.strokeStyle = 'rgba(255,255,255,.22)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX - runwayHalf, -2000);
+    ctx.lineTo(centerX - runwayHalf, h + 2000);
+    ctx.moveTo(centerX + runwayHalf, -2000);
+    ctx.lineTo(centerX + runwayHalf, h + 2000);
+    ctx.stroke();
+
+    // Centerline dashed (desired track baseline)
+    ctx.strokeStyle = 'rgba(255,255,255,.50)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([18, 18]);
+    ctx.lineDashOffset = -camY * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(centerX, -2000);
+    ctx.lineTo(centerX, h + 2000);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
+  }
+
+  function drawTrackLabels(w, h, camX) {
+    const cx = w/2 - camX; // runway centerline x in screen coords
+
+    // A thin “desired track” guide line overlay
+    ctx.strokeStyle = 'rgba(47,124,255,.28)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, h);
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = 'rgba(10,16,32,.72)';
+    roundRect(ctx, cx + 12, 120, 132, 30, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.font = '600 12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+    ctx.fillText('Desired Track', cx + 24, 140);
+  }
+
+  function drawTrack(w, h) {
+    if (state.track.length < 2) return;
+
+    const cx = w/2;
+    const cy = h/2;
+
+    const cur = state.pos;
+    const pts = state.track;
+
+    ctx.save();
+    ctx.lineWidth = 6;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(47,124,255,.75)';
+
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++){
+      // world->screen relative to camera locked on current aircraft
+      const sx = cx + (pts[i].x - cur.x);
+      const sy = cy - (pts[i].y - cur.y); // invert y for screen
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+
+    // subtle highlight
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,.35)';
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawWindVector(w, h) {
+    // Draw wind vector near top-right of flight view
+    const baseX = w - 110;
+    const baseY = 96;
+    const vx = state.wind.x;
+    const vy = state.wind.y;
+    const mag = Math.hypot(vx, vy);
+
+    // scale for display
+    const maxLen = 90;
+    const len = mag <= 0.01 ? 0 : clamp(mag / WIND_MAX, 0, 1) * maxLen;
+    const ang = Math.atan2(vy, vx);
+
+    ctx.save();
+    ctx.translate(baseX, baseY);
+
+    // pill background
+    ctx.fillStyle = 'rgba(10,16,32,.72)';
+    roundRect(ctx, -68, -34, 136, 68, 14);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // vector
+    ctx.rotate(ang);
+    ctx.strokeStyle = 'rgba(47,124,255,.95)';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-10, 0);
+    ctx.lineTo(-10 + len, 0);
+    ctx.stroke();
+
+    // arrow head
+    ctx.fillStyle = 'rgba(47,124,255,.95)';
+    ctx.beginPath();
+    ctx.moveTo(-10 + len, 0);
+    ctx.lineTo(-10 + len - 14, -9);
+    ctx.lineTo(-10 + len - 14,  9);
+    ctx.closePath();
+    if (len > 8) ctx.fill();
+
+    ctx.restore();
+
+    // label text
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.font = '600 12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+    ctx.fillText('WIND', w - 162, 78);
+    ctx.fillStyle = 'rgba(255,255,255,.80)';
+    ctx.font = '600 12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+    ctx.fillText(`${Math.round(state.windDeg)}°  ${state.windKts} kts`, w - 176, 98);
+  }
+
+  function drawAirplane(w, h) {
+    const cx = w / 2;
+    const cy = h / 2;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(state.headingRad);
+
+    // Subtle drop shadow for readability on bright ground
+    ctx.shadowColor = "rgba(0,0,0,.25)";
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 10;
+
+    if (airplaneImgReady) {
+      // Your PNG is 704x456. Size it by width responsively.
+      const desiredWidth = Math.min(320, w * 0.46);
+      const scale = desiredWidth / airplaneImg.naturalWidth;
+      const drawW = airplaneImg.naturalWidth * scale;
+      const drawH = airplaneImg.naturalHeight * scale;
+
+      // PNG points north already; no extra rotation required.
+      ctx.drawImage(airplaneImg, -drawW / 2, -drawH / 2, drawW, drawH);
+    } else {
+      // Fallback placeholder while image loads
+      ctx.fillStyle = "rgba(255,255,255,.85)";
+      ctx.strokeStyle = "rgba(0,0,0,.12)";
+      ctx.lineWidth = 1;
+      roundRect(ctx, -14, -52, 28, 104, 12);
+      ctx.fill(); ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // ===== Main loop =====
+  function step(now){
+    const dt = Math.min(0.04, (now - state.time) / 1000); // cap dt
+    state.time = now;
+
+    // If not dragging, ease yoke back toward target (neutral) over RETURN_TO_CENTER_SECONDS
+    if (!dragging) {
+      // Exponential smoothing: ~99% to target by RETURN_TO_CENTER_SECONDS
+      const alpha = 1 - Math.exp(-dt * 4.6 / RETURN_TO_CENTER_SECONDS);
+      state.bankDeg = state.bankDeg + (state.bankDegTarget - state.bankDeg) * alpha;
+      // Snap extremely close values to exactly 0 for clean readouts/LEVEL state
+      if (Math.abs(state.bankDeg) < 0.05) state.bankDeg = 0;
+    }
+
+    // Keyboard control (when not dragging): hold keys to bank, release to return to center
+    if (!dragging) {
+      const KEY_BANK_DEG = 16;           // bank command while key is held
+      const KEY_RAMP_PER_SEC = 6.0;      // how quickly it ramps toward that bank
+
+      let target = 0;
+      if (keyLeft && !keyRight) target = -KEY_BANK_DEG;
+      if (keyRight && !keyLeft) target =  KEY_BANK_DEG;
+
+      // Apply detent around zero
+      if (Math.abs(target) <= BANK_SNAP_DEG) target = 0;
+
+      // Set the target; easing logic will move bankDeg toward it
+      state.bankDegTarget = target;
+
+      // If a key is held, ramp bankDeg toward target for responsiveness
+      if (target !== 0) {
+        const a = 1 - Math.exp(-dt * KEY_RAMP_PER_SEC);
+        state.bankDeg = state.bankDeg + (target - state.bankDeg) * a;
+      }
+    }
+
+    // Turn rate based on bank (momentary input), scaled linearly
+    const turnRateRadPerSec =
+      (state.bankDeg / YOKE_MAX_DEG) * (TURN_RATE_DEG_PER_SEC_AT_FULL * Math.PI / 180);
+    state.headingRad += turnRateRadPerSec * dt;
+
+    // Airspeed vector based on heading
+    const ax = Math.sin(state.headingRad) * AIRSPEED;
+    const ay = Math.cos(state.headingRad) * AIRSPEED;
+
+    // Ground velocity = air velocity + wind
+    const gx = ax + state.wind.x;
+    const gy = ay + state.wind.y;
+
+    // Integrate position in world coords
+    state.pos.x += gx * dt;
+    state.pos.y += gy * dt;
+
+    // Track history in world coords
+    state.track.push({ x: state.pos.x, y: state.pos.y });
+    if (state.track.length > TRACK_POINTS) state.track.shift();
+
+    // Readouts
+    const headingDeg = (state.headingRad * 180/Math.PI) % 360;
+    const headingShown = (headingDeg + 360) % 360;
+    headingReadout.textContent = `${Math.round(headingShown)}°`;
+
+    const bankShown = Math.round(state.bankDeg);
+    bankReadout.textContent = `${bankShown}°`;
+
+    // Cross-track error relative to runway centerline (x=0)
+    xtkReadout.textContent = `${Math.round(state.pos.x)}`;
+
+    // Wings-level indicator
+    const isLevel = Math.abs(state.bankDeg) === 0;
+    wingsReadout.textContent = isLevel ? "LEVEL" : "BANKING";
+    wingsPill.classList.toggle("good", isLevel);
+    wingsPill.classList.toggle("warn", !isLevel);
+
+    // Yoke visual matches bank input
+    yokeEl.style.transform = `rotate(${state.bankDeg}deg)`;
+
+    // Rotate the animated airplane GIF overlay to match heading
+    airplaneSprite.style.transform = `translate(-50%, -50%) rotate(${state.headingRad}rad)`;
+
+    // Render
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+
+    drawRunwayAndGround(state.pos.x, state.pos.y, w, h);
+    drawTrackLabels(w, h, state.pos.x);
+    drawTrack(w, h);
+
+    requestAnimationFrame(step);
+  }
+
+  // Initialize track with starting point
+  state.track.push({ x: state.pos.x, y: state.pos.y });
+
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>

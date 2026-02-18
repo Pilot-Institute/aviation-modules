@@ -1,0 +1,14 @@
+name = "modules"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+
+# Static assets (HTML, JS, CSS, data files)
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Custom domain: modules.pilotinstitute.com
+# Add this domain in Cloudflare Dashboard (Workers & Pages → your worker → Domains) if needed.
+[[routes]]
+pattern = "modules.pilotinstitute.com"
+custom_domain = true
