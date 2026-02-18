@@ -238,6 +238,14 @@
       .footer{ display:none !important; }
     }
   </style>
+  <script>
+    window.addEventListener('load', function(){
+      requestAnimationFrame(function(){
+        var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        window.parent.postMessage({type:'pi-resize',height:h},'*');
+      });
+    });
+  </script>
 </head>
 <body>
   <div class="topbar">

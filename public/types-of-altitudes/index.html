@@ -266,6 +266,14 @@
       .controls{ position:relative; width:auto; right:auto; top:auto; bottom:auto; border-radius:0; }
     }
   </style>
+  <script>
+    window.addEventListener('load', function(){
+      requestAnimationFrame(function(){
+        var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        window.parent.postMessage({type:'pi-resize',height:h},'*');
+      });
+    });
+  </script>
 </head>
 
 <body>
