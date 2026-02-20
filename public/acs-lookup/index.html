@@ -116,6 +116,15 @@
       transition:border-color .15s, box-shadow .15s;
     }
     textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,45,123,.12); }
+    input[type="email"]{
+      width:100%; padding:10px 14px; border-radius:var(--radius-sm);
+      border:1px solid var(--border-strong); outline:none;
+      background:var(--bg); color:var(--text);
+      font-family:var(--font); font-size:13px;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    input[type="email"]:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,45,123,.12); }
+    input[type="email"]::placeholder{ color:var(--muted); }
     input[type="file"]{ color:var(--muted); font-size:12px; font-weight:600; font-family:var(--font); }
     .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
     button{
@@ -259,6 +268,7 @@
             <div class="info-popup-row"><span class="info-popup-code">UA</span> Unmanned Aircraft</div>
             <div class="info-popup-row"><span class="info-popup-code">IR</span> Instrument Rating</div>
             <div class="info-popup-row"><span class="info-popup-code">CA</span> Commercial Airplane</div>
+            <div class="info-popup-row"><span class="info-popup-code">PH</span> Private Helicopter</div>
           </div>
         </div>
       </div>
@@ -287,6 +297,12 @@ PA.I.A.K1, PA.I.B.K2
 IR.I.A.K1
 IR-VI-C-K3 (hyphens also work)
 "></textarea>
+
+        <div style="margin-top:12px;">
+          <label class="field-label" for="emailInput">Email (optional — receive a copy of your results)</label>
+          <input type="email" id="emailInput" placeholder="you@example.com" />
+        </div>
+
         <div class="row">
           <button id="btnClear">Clear</button>
           <button class="primary" id="btnSend" disabled>I verified my codes, please process</button>
@@ -337,7 +353,7 @@ IR-VI-C-K3 (hyphens also work)
       </div>
     </div>
   </div>
-  <div class="footer">Version: <code>v2.1.3-2026-02-15</code> &middot; Pilot Institute</div>
+  <div class="footer">Version: <code>v2.2.0-2026-02-15</code> &middot; Pilot Institute</div>
 
   <div id="debugPanel" style="display:none;">
     <textarea id="dbgText" style="width:100%;min-height:180px;"></textarea>
@@ -350,7 +366,7 @@ IR-VI-C-K3 (hyphens also work)
  * CONFIG
  **********************/
 const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzgxC5m5fLlILNGs4gl_m-bG1gZtaYcw8msb-ZCYQIYLfeBuEmKeZ3Htl8D-Qt03Gk0/exec";
-const VERSION = "v2.1.3-2026-02-15";
+const VERSION = "v2.2.0-2026-02-15";
 window.__datasetReady = null;
 window.__lastPdfText = "";
 window.__lastOcrText = "";
@@ -1110,6 +1126,7 @@ function renderAll(codes){
   renderChips("areaChips","areaEmpty",byArea);renderUnknown(unknown);renderTable(matched);
   el("btnCopy").disabled=!(matched.length||unknown.length);el("btnPDF").disabled=!(matched.length||unknown.length);
   window.__lastCopyText=buildCopyText(matched,unknown);
+  window.__lastMatchedRecords=matched;
   window.__lastPayload={version:VERSION,timestamp:new Date().toISOString(),fields:window.__lastReportFields||{},codes:codes,matchedCount:matched.length,unknownCount:unknown.length,summaryByArea:byArea};
   setSendEnabled(Boolean(GOOGLE_SHEET_WEBAPP_URL));
 }
@@ -1119,6 +1136,8 @@ function createPDF(){const prev=document.title;document.title="FAA_Exam_ACS_Code
 async function sendToGoogleSheet(){
   if(!GOOGLE_SHEET_WEBAPP_URL){setToast("Google Sheet endpoint URL not set.");return;}
   const payload=window.__lastPayload;if(!payload){setToast("Nothing to send.");return;}
+  const email=(el("emailInput").value||"").trim();
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setToast("Please enter a valid email address.");return;}
   try{
     el("btnSend").disabled=true;setToast("Sending\u2026");
     // Build flat row: [timestamp, examDate, FTN, examId, score%, take, code1, code2, ...]
@@ -1132,12 +1151,15 @@ async function sendToGoogleSheet(){
       f.take||"",
       ...payload.codes
     ];
-    const sendPayload={version:VERSION,row:row};
+    // Build results for email
+    const matched=window.__lastMatchedRecords||[];
+    const emailResults=matched.map(r=>({code:r.code,area:r.area,task:r.task,type:r.type,desc:r.desc}));
+    const sendPayload={version:VERSION,row:row,email:email||"",results:emailResults,score:f.score||""};
     const res=await fetch(GOOGLE_SHEET_WEBAPP_URL,{method:"POST",body:new URLSearchParams({payload:JSON.stringify(sendPayload)})});
     if(!res.ok)throw new Error(`Send failed (${res.status}).`);
     // Show results after successful send
     el("resultsCard").style.display="";
-    setToast("Processed successfully!");
+    setToast(email?"Processed! Results sent to "+email+".":"Processed successfully!");
   }catch(e){setToast(String(e.message||e));}finally{setSendEnabled(Boolean(GOOGLE_SHEET_WEBAPP_URL&&window.__lastPayload));}
 }
 
@@ -1162,7 +1184,7 @@ el("btnClear").addEventListener("click",()=>{
   el("resultsCard").style.display="none";
   el("statFound").textContent="0";el("statMatched").textContent="0";el("statUnknown").textContent="0";
   el("matchStatus").textContent="0 matches";el("btnCopy").disabled=true;el("btnPDF").disabled=true;
-  setSendEnabled(false);window.__lastCopyText="";window.__lastPayload=null;window.__lastFTN="";window.__lastExamId="";window.__lastReportFields={};setToast("");
+  setSendEnabled(false);window.__lastCopyText="";window.__lastPayload=null;window.__lastMatchedRecords=[];window.__lastFTN="";window.__lastExamId="";window.__lastReportFields={};el("emailInput").value="";setToast("");
 });
 el("btnCopy").addEventListener("click",async()=>{const text=window.__lastCopyText||"";try{await navigator.clipboard.writeText(text);setToast("Copied results to clipboard.");}catch{const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);setToast("Copied (fallback).");}});
 el("btnPDF").addEventListener("click",createPDF);
